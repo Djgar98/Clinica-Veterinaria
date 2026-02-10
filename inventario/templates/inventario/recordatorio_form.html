@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recordatorio{% endblock %}
+
+{% block content %}
+{% if object %}
+  {% include 'partials/page_header.html' with eyebrow='Inventario' title='Editar recordatorio' subtitle='Actualiza la fecha o el estado' actions_partial='partials/actions/recordatorios_back.html' %}
+{% else %}
+  {% include 'partials/page_header.html' with eyebrow='Inventario' title='Nuevo recordatorio' subtitle='Entrada de producto o visita de proveedor' actions_partial='partials/actions/recordatorios_back.html' %}
+{% endif %}
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Título</label>
+          {{ form.titulo }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Tipo</label>
+          {{ form.tipo }}
+          <div class="form-text">Si son varios productos, anótalos en “Notas”.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Fecha y hora</label>
+          {{ form.fecha }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Estado</label>
+          {{ form.estado }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Proveedor</label>
+          {{ form.proveedor }}
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notas</label>
+          {{ form.notas }}
+          <div class="form-text">Ejemplo: “Llegan 5 sacos de comida, 3 shampoos y 2 collares”.</div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end mt-4">
+        <a href="{% url 'inventario:recordatorio_list' %}" class="btn btn-outline-secondary me-2">Cancelar</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}

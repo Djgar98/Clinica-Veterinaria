@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo usuario{% endblock %}
+
+{% block content %}
+{% if view.object %}
+  {% include 'partials/page_header.html' with eyebrow='Usuarios' title='Editar usuario' subtitle='Define si es dueño, staff o ambos' %}
+{% else %}
+  {% include 'partials/page_header.html' with eyebrow='Usuarios' title='Crear usuario' subtitle='Define si es dueño, staff o ambos' %}
+{% endif %}
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-warning mb-3" role="alert">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="row g-4">
+        <div class="col-12">
+          <h6 class="text-uppercase text-muted mb-2">Datos básicos</h6>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Usuario</label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Email</label>
+          {{ form.email }}
+          {{ form.email.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Nombre</label>
+          {{ form.first_name }}
+          {{ form.first_name.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Apellido</label>
+          {{ form.last_name }}
+          {{ form.last_name.errors }}
+        </div>
+        {% if form.password1 %}
+        <div class="col-md-6">
+          <label class="form-label">Contraseña</label>
+          {{ form.password1 }}
+          {{ form.password1.errors }}
+        </div>
+        {% endif %}
+        {% if form.password2 %}
+        <div class="col-md-6">
+          <label class="form-label">Confirmar contraseña</label>
+          {{ form.password2 }}
+          {{ form.password2.errors }}
+        </div>
+        {% endif %}
+        <div class="col-md-6">
+          <label class="form-label">Estado</label>
+          <div class="form-check form-switch">
+            {{ form.is_active }}
+            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Usuario activo</label>
+          </div>
+          {{ form.is_active.errors }}
+        </div>
+        <div class="col-12">
+          <label class="form-label">Roles</label>
+          <div class="d-flex flex-wrap gap-3">
+            {% for checkbox in form.roles %}
+              <label class="form-check form-check-inline mb-0">
+                {{ checkbox.tag }}
+                <span class="form-check-label">{{ checkbox.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {{ form.roles.errors }}
+          <div class="form-text">Puedes seleccionar uno o varios roles según sus funciones.</div>
+        </div>
+
+        <div class="col-12">
+          <hr>
+          <h6 class="mb-2">Datos personales</h6>
+          <div class="form-text mb-2">Estos datos se guardan una sola vez y aplican para dueño y staff.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Teléfono</label>
+          {{ form.telefono }}
+          {{ form.telefono.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Documento</label>
+          {{ form.documento }}
+          {{ form.documento.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Dirección</label>
+          {{ form.direccion }}
+          {{ form.direccion.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Fecha de nacimiento</label>
+          {{ form.fecha_nacimiento }}
+          {{ form.fecha_nacimiento.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Género</label>
+          {{ form.genero }}
+          {{ form.genero.errors }}
+        </div>
+
+        <div class="col-12">
+          <hr>
+          <h6 class="mb-2">Datos del dueño</h6>
+        </div>
+        <div class="col-md-6 owner-fields">
+          <label class="form-label">Contacto de emergencia</label>
+          {{ form.owner_contacto }}
+          {{ form.owner_contacto.errors }}
+        </div>
+        <div class="col-12 owner-fields">
+          <label class="form-label">Notas</label>
+          {{ form.owner_notas }}
+          {{ form.owner_notas.errors }}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end mt-4">
+        <a href="{% url 'usuarios:list' %}" class="btn btn-outline-secondary me-2">Cancelar</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const roleInputs = document.querySelectorAll('input[name="roles"]');
+    const ownerFields = document.querySelectorAll('.owner-fields');
+    if (!roleInputs.length) return;
+    const toggle = () => {
+      const values = Array.from(roleInputs).filter(i => i.checked).map(i => i.value);
+      const isOwner = values.includes('DUENO');
+      ownerFields.forEach(el => el.style.display = isOwner ? '' : 'none');
+    };
+    roleInputs.forEach(i => i.addEventListener('change', toggle));
+    toggle();
+  })();
+</script>
+<script>
+  (function(){
+    const input = document.querySelector('input[data-doc-format="true"]');
+    if (!input) return;
+    const format = (val) => {
+      const raw = (val || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
+      const digits = raw.replace(/[A-Z]/g, '');
+      const letter = raw.replace(/[^A-Z]/g, '').slice(0, 1);
+      const d1 = digits.slice(0, 3);
+      const d2 = digits.slice(3, 9);
+      const d3 = digits.slice(9, 13);
+      let out = d1;
+      if (d2) out += '-' + d2;
+      if (d3) out += '-' + d3;
+      if (letter) out += letter;
+      return out;
+    };
+    input.addEventListener('input', (e) => {
+      const caret = input.selectionStart || 0;
+      const before = input.value;
+      const after = format(before);
+      input.value = after;
+      const diff = after.length - before.length;
+      input.setSelectionRange(caret + diff, caret + diff);
+    });
+    input.addEventListener('blur', () => {
+      input.value = format(input.value);
+    });
+  })();
+</script>
+{% endblock content %}

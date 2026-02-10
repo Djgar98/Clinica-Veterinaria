@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calendario de citas{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Agenda' title='Calendario de citas' subtitle='Vista mensual y semanal' actions_partial='partials/actions/citas_back.html' %}
+
+<div class="card">
+  <div class="card-body">
+    <div id="calendar"></div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      locale: 'es',
+      nowIndicator: true,
+      events: '{% url "clinica:cita_events" %}',
+      eventClick: function(info) {
+        if (info.event.url) {
+          window.location = info.event.url;
+          info.jsEvent.preventDefault();
+        }
+      }
+    });
+    calendar.render();
+  });
+</script>
+{% endblock content %}

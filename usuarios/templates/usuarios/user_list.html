@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Usuarios' title='Gestión de usuarios' subtitle='Crea usuarios y define su rol' actions_partial='partials/actions/usuarios_actions.html' %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td class="fw-semibold">{{ u.username }}</td>
+            <td>{{ u.get_full_name|default:'—' }}</td>
+            <td>{{ u.email|default:'—' }}</td>
+            <td>
+              {% if u.groups.all|length %}
+                {% for g in u.groups.all %}
+                  <span class="chip">{{ g.name }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if perms.auth.change_user %}
+                <a href="{% url 'usuarios:edit' u.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">No hay usuarios registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

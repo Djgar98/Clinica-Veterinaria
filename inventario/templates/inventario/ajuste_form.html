@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo ajuste{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Nuevo ajuste' subtitle='Solicita un ajuste de stock' actions_partial='partials/actions/back.html' %}
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="col-md-6">
+        <label class="form-label">Producto</label>
+        {{ form.producto }}
+        {{ form.producto.errors }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Cantidad (positivo entra, negativo sale)</label>
+        {{ form.cantidad }}
+        {{ form.cantidad.errors }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Lote</label>
+        {{ form.lote }}
+        {{ form.lote.errors }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Fecha de vencimiento</label>
+        {{ form.fecha_vencimiento }}
+        {{ form.fecha_vencimiento.errors }}
+      </div>
+      <div class="col-12">
+        <label class="form-label">Motivo</label>
+        {{ form.motivo }}
+        {{ form.motivo.errors }}
+      </div>
+
+      <div class="d-flex justify-content-end mt-3">
+        {% if request.META.HTTP_REFERER %}
+          <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-outline-secondary me-2">Volver</a>
+        {% else %}
+          <a href="{% url 'inventario:ajuste_list' %}" class="btn btn-outline-secondary me-2">Volver</a>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Enviar solicitud</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}

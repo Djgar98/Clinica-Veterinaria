@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recordatorios{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Recordatorios' subtitle='Entradas de productos y visitas de proveedores' actions_partial='partials/actions/recordatorios_actions.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-3">
+        <select name="tipo" class="form-select">
+          <option value="">Tipo</option>
+          <option value="ENTRADA" {% if request.GET.tipo == 'ENTRADA' %}selected{% endif %}>Entrada de producto</option>
+          <option value="PROVEEDOR" {% if request.GET.tipo == 'PROVEEDOR' %}selected{% endif %}>Visita de proveedor</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="estado" class="form-select">
+          <option value="">Estado</option>
+          <option value="PENDIENTE" {% if request.GET.estado == 'PENDIENTE' %}selected{% endif %}>Pendiente</option>
+          <option value="COMPLETADO" {% if request.GET.estado == 'COMPLETADO' %}selected{% endif %}>Completado</option>
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'inventario:recordatorio_list' %}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% now "U" as now_ts %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Tipo</th>
+          <th>Fecha</th>
+          <th>Proveedor</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recordatorios %}
+          <tr>
+            <td class="fw-semibold">{{ r.titulo }}</td>
+            <td>{{ r.get_tipo_display }}</td>
+            <td>{{ r.fecha|date:'d M Y H:i' }}</td>
+            <td>{{ r.proveedor|default:'—' }}</td>
+            <td>
+              {% if r.estado == 'COMPLETADO' %}
+                <span class="chip"><i class="fas fa-check"></i> Completado</span>
+              {% else %}
+                <span class="badge-soft">Pendiente</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if perms.inventario.change_recordatorio %}
+                {% if r.estado == 'COMPLETADO' or r.fecha|date:"U" < now_ts %}
+                  <button type="button" class="btn btn-sm btn-light rounded-pill" disabled>
+                    <i class="fas fa-lock me-1"></i> Cerrado
+                  </button>
+                {% else %}
+                  <form method="post" action="{% url 'inventario:recordatorio_complete' r.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill">
+                      <i class="fas fa-check me-1"></i> Completar
+                    </button>
+                  </form>
+                  <a href="{% url 'inventario:recordatorio_update' r.pk %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                    <i class="fas fa-pen me-1"></i> Editar
+                  </a>
+                {% endif %}
+              {% endif %}
+              {% if perms.inventario.delete_recordatorio %}
+                <a href="{% url 'inventario:recordatorio_delete' r.pk %}" class="btn btn-sm btn-outline-danger rounded-pill">
+                  <i class="fas fa-trash me-1"></i> Eliminar
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">No hay recordatorios.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

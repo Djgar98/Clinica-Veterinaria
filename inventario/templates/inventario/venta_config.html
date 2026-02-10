@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración de ventas{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Configuración de ventas' subtitle='Descuentos e IVA' %}
+
+<div class="d-flex justify-content-end mb-3">
+  <a class="btn btn-outline-secondary" href="{% url 'inventario:list' %}">Volver</a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="mb-3">
+      {% if config.iva_rate == '0' or config.iva_rate == 0 %}
+        <span class="badge-soft text-danger">IVA desactivado</span>
+      {% else %}
+        <span class="chip"><i class="fas fa-check"></i> IVA activo ({{ config.iva_rate }})</span>
+      {% endif %}
+    </div>
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+      <div class="col-md-6">
+        <label class="form-label">IVA (activar / desactivar)</label>
+        {{ form.iva_rate }}
+        <div class="form-text">0% = IVA desactivado. 15% = IVA activo.</div>
+      </div>
+      <div class="col-md-6 d-flex align-items-end gap-2">
+        <button class="btn btn-outline-secondary" type="submit" name="iva_quick" value="0">Desactivar IVA</button>
+        <button class="btn btn-outline-primary" type="submit" name="iva_quick" value="0.15">Activar IVA 15%</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,117 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Productos' subtitle='Control de stock y precios' actions_partial='partials/actions/productos_actions.html' %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">Producto</th>
+          <th scope="col">Stock</th>
+          <th scope="col">Lotes / Venc.</th>
+          <th scope="col">Precio (IVA incl.)</th>
+          <th scope="col">Estado</th>
+          <th scope="col" class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ p.nombre }}</div>
+            <div class="text-muted small">{{ p.categoria.name }}</div>
+            <div class="mt-1 d-flex flex-wrap gap-1">
+              {% if p.tipo == 'MEDICAMENTO' %}
+                <span class="badge-soft"><i class="fas fa-pills me-1"></i> Medicamento</span>
+              {% elif p.tipo == 'SERVICIO' %}
+                <span class="chip"><i class="fas fa-scissors"></i> Servicio</span>
+              {% else %}
+                <span class="chip"><i class="fas fa-paw"></i> Accesorio</span>
+              {% endif %}
+              {% if p.descuento_activo %}
+                <span class="badge-soft text-success">Descuento {{ p.descuento_pct }}%</span>
+              {% elif p.descuento_tipo_pct %}
+                <span class="badge-soft text-success">Descuento {{ p.descuento_tipo_pct }}% (tipo)</span>
+              {% endif %}
+              {% if p.tipo == 'MEDICAMENTO' and p.expired_lotes %}
+                <span class="badge-soft text-danger">Vencido</span>
+              {% endif %}
+              {% if p.tipo == 'MEDICAMENTO' and p.expiring_lotes %}
+                <span class="badge-soft text-danger">Vence pronto</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="fw-semibold">{{ p.stock_inicial }}</div>
+            <div class="text-muted small">Mín: {{ p.stock_minimo }}</div>
+          </td>
+          <td>
+            {% if p.tipo == 'MEDICAMENTO' %}
+              {% if p.lotes.all %}
+                <div class="small text-muted">Activos: {{ p.lotes.count }}</div>
+                <div class="small">
+                  {% for l in p.lotes.all %}
+                    {% if l.cantidad > 0 %}
+                      {% if forloop.counter <= 2 %}
+                        <div>{{ l.lote }} · {{ l.fecha_vencimiento|default:"-" }} · {{ l.cantidad }}</div>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-muted">Sin lotes</div>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td>C$ {{ p.precio_con_iva }}</td>
+          <td>
+            {% if not p.is_active %}
+              <span class="badge-soft">Inactivo</span>
+            {% elif p.tipo == 'SERVICIO' %}
+              <span class="chip"><i class="fas fa-check"></i> Servicio</span>
+            {% elif p.stock_inicial <= p.stock_minimo %}
+              <span class="badge-soft">Bajo</span>
+            {% else %}
+              <span class="chip"><i class="fas fa-check"></i> Ok</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="d-inline-flex flex-wrap gap-1 justify-content-end">
+              {% if perms.inventario.view_producto %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'inventario:producto_detail' p.pk %}" title="Ver"><i class="fas fa-eye"></i></a>
+              {% endif %}
+              {% if perms.inventario.view_inventorymovement %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'inventario:kardex_list' %}?producto={{ p.pk }}" title="Kardex"><i class="fas fa-clipboard-list"></i></a>
+              {% endif %}
+              {% if perms.inventario.add_stockadjustmentrequest %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'inventario:ajuste_create' %}?producto={{ p.pk }}" title="Ajuste"><i class="fas fa-sliders-h"></i></a>
+              {% endif %}
+              {% if perms.inventario.change_producto %}
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'inventario:producto_update' p.pk %}" title="Editar"><i class="fas fa-pen"></i></a>
+                <form method="post" action="{% url 'inventario:producto_toggle' p.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  {% if p.is_active %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Dar de baja"><i class="fas fa-ban"></i></button>
+                  {% else %}
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar"><i class="fas fa-check"></i></button>
+                  {% endif %}
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-muted">No hay productos registrados.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

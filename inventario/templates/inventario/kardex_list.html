@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kardex{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Kardex' subtitle='Historial de movimientos de stock' actions_partial='partials/actions/kardex_actions.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-4">
+        <select name="producto" class="form-select">
+          <option value="">Producto</option>
+          {% for p in productos %}
+            <option value="{{ p.id }}" {% if request.GET.producto == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="tipo" class="form-select">
+          <option value="">Tipo</option>
+          {% for value, label in tipo_choices %}
+            <option value="{{ value }}" {% if request.GET.tipo == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <input type="date" name="from" value="{{ request.GET.from }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <input type="date" name="to" value="{{ request.GET.to }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <select name="user" class="form-select">
+          <option value="">Usuario</option>
+          {% for uid, uname in usuarios %}
+            <option value="{{ uid }}" {% if request.GET.user == uid|stringformat:"s" %}selected{% endif %}>{{ uname }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-1 d-grid">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="d-flex justify-content-end mb-3">
+  <a class="btn btn-outline-secondary btn-sm" href="?{{ request.GET.urlencode }}&export=csv">Exportar CSV</a>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Tipo</th>
+          <th>Cantidad</th>
+          <th>Stock antes</th>
+          <th>Stock después</th>
+          <th>Lote</th>
+          <th>Vencimiento</th>
+          <th>Referencia</th>
+          <th>Solicitó</th>
+          <th>Autorizó</th>
+          <th>Usuario</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movimientos %}
+          <tr>
+            <td>{{ m.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ m.producto.nombre }}</td>
+            <td>{{ m.get_tipo_display }}</td>
+            <td class="fw-semibold {% if m.cantidad < 0 %}text-danger{% else %}text-success{% endif %}">{{ m.cantidad }}</td>
+            <td>{{ m.stock_before }}</td>
+            <td>{{ m.stock_after }}</td>
+            <td>{{ m.lote|default:"-" }}</td>
+            <td>{% if m.fecha_vencimiento %}{{ m.fecha_vencimiento }}{% else %}-{% endif %}</td>
+            <td>{{ m.referencia|default:"-" }}</td>
+            <td>
+              {% if m.tipo == 'AJUSTE' %}
+                {{ m.ajuste_solicitado_por|default:"-" }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if m.tipo == 'AJUSTE' %}
+                {{ m.ajuste_aprobado_por|default:"-" }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{% if m.created_by %}{{ m.created_by.get_full_name|default:m.created_by.username }}{% else %}-{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="12" class="text-center text-muted">No hay movimientos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

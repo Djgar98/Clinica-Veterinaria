@@ -1,0 +1,12 @@
+<div class="page-header">
+  <div>
+    {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
+    {% if title %}<h2 class="mb-1">{{ title }}</h2>{% endif %}
+    {% if subtitle %}<p class="text-muted mb-0">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if actions_partial %}
+    <div class="page-actions">
+      {% include actions_partial %}
+    </div>
+  {% endif %}
+</div>

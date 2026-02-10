@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Error del servidor{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="eyebrow">Error 500</div>
+    <h2 class="mb-2">Ocurrió un error interno</h2>
+    <p class="text-muted">Intenta nuevamente más tarde. Si el problema persiste, contacta al administrador.</p>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-primary" onclick="history.back()">Volver</button>
+      <a class="btn btn-outline-secondary" href="{% url 'clinica:dashboard' %}">Ir al inicio</a>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear descuento{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Crear descuento' subtitle='Aplica descuento por producto o por tipo' %}
+
+<div class="d-flex justify-content-end mb-3">
+  <a class="btn btn-outline-secondary" href="{% url 'inventario:producto_descuentos' %}">Volver</a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+      <div class="col-md-4">
+        <label class="form-label">Aplicar a</label>
+        {{ form.aplica_a }}
+        {% if form.aplica_a.errors %}<div class="invalid-feedback d-block">{{ form.aplica_a.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="col-md-4" data-target="producto">
+        <label class="form-label">Producto o servicio</label>
+        {% if producto %}
+          {{ form.producto }}
+          <input type="text" class="form-control" value="{{ producto.nombre }}" disabled>
+        {% else %}
+          {{ form.producto }}
+        {% endif %}
+        {% if form.producto.errors %}<div class="invalid-feedback d-block">{{ form.producto.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="col-md-4" data-target="tipo">
+        <label class="form-label">Tipo</label>
+        {% if tipo_descuento %}
+          {{ form.tipo }}
+          <input type="text" class="form-control" value="{{ tipo_descuento.get_tipo_display }}" disabled>
+        {% else %}
+          {{ form.tipo }}
+        {% endif %}
+        {% if form.tipo.errors %}<div class="invalid-feedback d-block">{{ form.tipo.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Descuento (%)</label>
+        {{ form.descuento_pct }}
+        {% if form.descuento_pct.errors %}<div class="invalid-feedback d-block">{{ form.descuento_pct.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        {{ form.descuento_desde }}
+        {% if form.descuento_desde.errors %}<div class="invalid-feedback d-block">{{ form.descuento_desde.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        {{ form.descuento_hasta }}
+        {% if form.descuento_hasta.errors %}<div class="invalid-feedback d-block">{{ form.descuento_hasta.errors|striptags }}</div>{% endif %}
+      </div>
+      <div class="col-12 d-flex justify-content-end">
+        <button class="btn btn-primary" type="submit">Guardar descuento</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  (function(){
+    const aplica = document.getElementById('id_aplica_a');
+    const productoWrap = document.querySelector('[data-target="producto"]');
+    const tipoWrap = document.querySelector('[data-target="tipo"]');
+    function sync() {
+      if (!aplica) return;
+      const val = aplica.value;
+      if (val === 'TIPO') {
+        if (productoWrap) productoWrap.style.display = 'none';
+        if (tipoWrap) tipoWrap.style.display = '';
+      } else {
+        if (productoWrap) productoWrap.style.display = '';
+        if (tipoWrap) tipoWrap.style.display = 'none';
+      }
+    }
+    if (aplica) {
+      aplica.addEventListener('change', sync);
+      sync();
+    }
+  })();
+</script>
+{% endblock %}

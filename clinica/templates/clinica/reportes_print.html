@@ -1,0 +1,152 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reporte</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link href="{% static 'css/app.css' %}" rel="stylesheet">
+    <style>
+      body { background: #fff; }
+      .print-only { display: block; }
+      .page-break { page-break-after: always; }
+      @media print {
+        .no-print { display: none !important; }
+        .card { box-shadow: none !important; }
+        .page-break { page-break-after: always; }
+      }
+    </style>
+  </head>
+  <body class="m-0 p-4">
+    <div class="no-print d-flex justify-content-end mb-3">
+      <button class="btn btn-primary" onclick="window.print()">Imprimir / Guardar PDF</button>
+    </div>
+
+    <h2 class="mb-1">Reporte general</h2>
+    <p class="text-muted mb-4">Periodo: {{ date_from }} a {{ date_to }}</p>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <strong>Utilidad</strong>
+        <div class="mt-2">Ingresos: C$ {{ utilidad_total.ingresos|default:0 }} | Costos: C$ {{ utilidad_total.costo|default:0 }} | Utilidad: C$ {{ utilidad_total.utilidad|default:0 }}</div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Ventas por periodo</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Periodo</th><th class="text-end">Cantidad</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+            {% for row in ventas_group %}
+              <tr><td>{{ row.period|date:'Y-m-d' }}</td><td class="text-end">{{ row.cantidad }}</td><td class="text-end">C$ {{ row.total }}</td></tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Top productos</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Producto</th><th class="text-end">Cantidad</th><th class="text-end">Ingresos</th><th class="text-end">Utilidad</th></tr></thead>
+          <tbody>
+            {% for row in top_productos %}
+              <tr><td>{{ row.producto__nombre }}</td><td class="text-end">{{ row.cantidad }}</td><td class="text-end">C$ {{ row.ingresos }}</td><td class="text-end">C$ {{ row.utilidad }}</td></tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Ventas por categoría</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Categoría</th><th class="text-end">Cantidad</th><th class="text-end">Ingresos</th><th class="text-end">Utilidad</th></tr></thead>
+          <tbody>
+            {% for row in top_categorias %}
+              <tr><td>{{ row.producto__categoria__name }}</td><td class="text-end">{{ row.cantidad }}</td><td class="text-end">C$ {{ row.ingresos }}</td><td class="text-end">C$ {{ row.utilidad }}</td></tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Ventas por vendedor</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Vendedor</th><th class="text-end">Cantidad</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+            {% for row in ventas_por_vendedor %}
+              <tr><td>{{ row.vendedor__nombre_completo|default:'—' }}</td><td class="text-end">{{ row.cantidad }}</td><td class="text-end">C$ {{ row.total }}</td></tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Utilidad por vendedor</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Vendedor</th><th class="text-end">Ingresos</th><th class="text-end">Costos</th><th class="text-end">Utilidad</th></tr></thead>
+          <tbody>
+            {% for row in utilidad_por_vendedor %}
+              <tr><td>{{ row.venta__vendedor__nombre_completo|default:'—' }}</td><td class="text-end">C$ {{ row.ingresos }}</td><td class="text-end">C$ {{ row.costo }}</td><td class="text-end">C$ {{ row.utilidad }}</td></tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Clientes frecuentes</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Cliente</th><th class="text-end">Compras</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+            {% for row in clientes_frecuentes %}
+              <tr>
+                <td>{{ row.id_propietario__first_name }} {{ row.id_propietario__last_name }}{% if not row.id_propietario__first_name and not row.id_propietario__last_name %}{{ row.id_propietario__username }}{% endif %}</td>
+                <td class="text-end">{{ row.cantidad }}</td>
+                <td class="text-end">C$ {{ row.total }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><strong>Stock crítico</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Producto</th><th class="text-end">Stock</th><th class="text-end">Mínimo</th></tr></thead>
+          <tbody>
+            {% for row in stock_critico %}
+              <tr><td>{{ row.nombre }}</td><td class="text-end">{{ row.stock_inicial }}</td><td class="text-end">{{ row.stock_minimo }}</td></tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin stock crítico.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+<div class="d-flex flex-wrap gap-2 align-items-center">
+  <form method="get" class="d-flex gap-2 flex-wrap" role="search" aria-label="Buscar productos">
+    <input name="q" class="form-control" placeholder="Buscar por nombre" value="{{ request.GET.q|default:'' }}">
+    <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+  </form>
+  {% if perms.inventario.add_producto %}
+    <a href="{% url 'inventario:create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Nuevo</a>
+  {% endif %}
+  {% if perms.inventario.view_inventorymovement %}
+    <a href="{% url 'inventario:kardex_list' %}" class="btn btn-outline-secondary"><i class="fas fa-clipboard-list me-1"></i> Kardex</a>
+  {% endif %}
+  {% if perms.inventario.view_productolote %}
+    <a href="{% url 'inventario:lotes_vencer' %}" class="btn btn-outline-secondary"><i class="fas fa-hourglass-half me-1"></i> Lotes por vencer</a>
+  {% endif %}
+  {% if perms.inventario.view_stockadjustmentrequest %}
+    <a href="{% url 'inventario:ajuste_list' %}" class="btn btn-outline-secondary"><i class="fas fa-sliders-h me-1"></i> Ajustes</a>
+  {% endif %}
+</div>

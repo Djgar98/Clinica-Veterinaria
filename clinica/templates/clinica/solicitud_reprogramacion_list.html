@@ -1,0 +1,77 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Solicitudes de reprogramación{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Citas' title='Reprogramaciones' subtitle='Solicitudes de cambio de fecha' %}
+
+{% if reprog_error %}
+  <div class="alert alert-warning">
+    {{ reprog_error }}
+  </div>
+{% endif %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Cita</th>
+          <th>Solicitado por</th>
+          <th>Rol</th>
+          <th>Motivo</th>
+          <th>Nueva fecha</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in solicitudes %}
+          <tr>
+            <td class="fw-semibold">{{ s.cita.mascota.nombre }}</td>
+            <td>{{ s.solicitado_por.get_full_name|default:s.solicitado_por.username|default:'—' }}</td>
+            <td>
+              {% if s.solicitado_por == s.cita.mascota.owner %}
+                Dueño
+              {% else %}
+                Veterinario
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ s.descripcion|default:'—' }}</td>
+            <td>{{ s.nueva_fecha|date:'d M Y H:i' }}</td>
+            <td>
+              {% if s.estado == 'PENDIENTE' %}
+                <span class="badge-soft">Pendiente</span>
+              {% elif s.estado == 'APROBADA' %}
+                <span class="chip"><i class="fas fa-check"></i> Aprobada</span>
+              {% else %}
+                <span class="badge-soft">Rechazada</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if s.estado == 'PENDIENTE' and not is_veterinario %}
+                {% if perms.clinica.change_solicitudreprogramacion %}
+                  <form method="post" action="{% url 'clinica:solicitud_reprogramacion_approve' s.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
+                  </form>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+          {% if s.estado == 'RECHAZADA' and s.motivo_rechazo %}
+            <tr>
+              <td colspan="5" class="text-muted small">
+                Motivo rechazo: {{ s.motivo_rechazo }}
+              </td>
+            </tr>
+          {% endif %}
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">No hay solicitudes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

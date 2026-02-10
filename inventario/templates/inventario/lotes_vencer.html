@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lotes por vencer{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Lotes por vencer' subtitle='Medicamentos próximos a vencer' actions_partial='partials/actions/kardex_actions.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-3">
+        <label class="form-label">D?as</label>
+        <input type="number" name="dias" class="form-control" min="1" value="{{ dias }}">
+      </div>
+      <div class="col-md-2 align-self-end">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Lote</th>
+          <th>Vencimiento</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in lotes %}
+          <tr>
+            <td>{{ l.producto.nombre }}</td>
+            <td>{{ l.lote }}</td>
+            <td>{{ l.fecha_vencimiento }}</td>
+            <td>{{ l.cantidad }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center text-muted">No hay lotes pr?ximos a vencer.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

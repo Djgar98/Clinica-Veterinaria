@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Acceso denegado{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="eyebrow">Permisos</div>
+    <h2 class="mb-2">No tienes permiso para acceder a esta sección</h2>
+    <p class="text-muted">Si crees que es un error, contacta al administrador.</p>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-primary" onclick="history.back()">Volver</button>
+      <a class="btn btn-outline-secondary" href="{% url 'clinica:dashboard' %}">Ir al inicio</a>
+    </div>
+  </div>
+</div>
+{% endblock content %}

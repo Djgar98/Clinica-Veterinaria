@@ -1,0 +1,103 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Venta #{{ venta.id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow">Ventas</div>
+    <h2 class="mb-1">Venta #{{ venta.id }}</h2>
+    <p class="text-muted mb-0">{{ venta.fecha|date:'Y-m-d H:i' }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'inventario:venta_list' %}" class="btn btn-outline-secondary">Volver</a>
+    <a href="{% url 'inventario:venta_receipt' venta.pk %}" class="btn btn-outline-primary" target="_blank"><i class="fas fa-print me-1"></i> Recibo</a>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-4">
+        <p class="mb-1"><strong>Total:</strong> C$ {{ venta.total }}</p>
+        <p class="mb-1"><strong>Cliente:</strong>
+          {% if venta.id_propietario %}
+            {{ venta.id_propietario.get_full_name|default:venta.id_propietario.username }}
+          {% else %}
+            {{ venta.cliente_nombre|default:'—' }}
+          {% endif %}
+        </p>
+        <p class="mb-1"><strong>Vendedor:</strong> {{ venta.vendedor|default:'—' }}</p>
+        {% if descuento_items and descuento_items > 0 %}
+          <p class="mb-1"><strong>Descuento aplicado:</strong> C$ {{ descuento_items }}</p>
+        {% endif %}
+        <p class="mb-1"><strong>Impuesto:</strong> C$ {{ venta.impuesto }}</p>
+      </div>
+      <div class="col-md-8">
+        <p class="mb-0"><strong>Notas:</strong></p>
+        <p class="text-muted mb-0">{{ venta.notas|default:'Sin notas' }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-white d-flex align-items-center justify-content-between">
+    <h6 class="mb-0">Detalle de items</h6>
+    <span class="chip"><i class="fas fa-box"></i> {{ venta.items.count }} items</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Precio (IVA incl.)</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in venta.items.all %}
+          <tr>
+            <td class="fw-semibold">{{ item.producto.nombre }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>C$ {{ item.precio_unitario }}</td>
+            <td>C$ {{ item.subtotal }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center text-muted">No hay items registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header bg-white">Historial de cambios</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Acción</th>
+          <th>Usuario</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in audits %}
+          <tr>
+            <td>{{ a.timestamp|date:"Y-m-d H:i" }}</td>
+            <td>{{ a.action }}</td>
+            <td>{% if a.user %}{{ a.user.get_full_name|default:a.user.username }}{% else %}-{% endif %}</td>
+            <td>{{ a.notes|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center text-muted">Sin auditoría.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

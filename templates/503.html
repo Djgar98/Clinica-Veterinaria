@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}En mantenimiento{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="eyebrow">Error 503</div>
+    <h2 class="mb-2">Servicio en mantenimiento</h2>
+    <p class="text-muted">Estamos realizando mejoras. Vuelve a intentarlo en unos minutos.</p>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-primary" onclick="history.back()">Volver</button>
+      <a class="btn btn-outline-secondary" href="{% url 'clinica:dashboard' %}">Ir al inicio</a>
+    </div>
+  </div>
+</div>
+{% endblock content %}

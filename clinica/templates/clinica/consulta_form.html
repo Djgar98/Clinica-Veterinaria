@@ -1,0 +1,168 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nueva Consulta{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow">Consultas</div>
+    <h2 class="mb-1">Agregar consulta</h2>
+    {% if mascota %}
+      <p class="text-muted mb-0">Mascota: <strong>{{ mascota.nombre }}</strong></p>
+    {% endif %}
+  </div>
+  <div class="page-actions">
+    {% if cita %}
+      <a href="{% url 'clinica:cita_detail' cita.pk %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Volver
+      </a>
+    {% elif mascota %}
+      <a href="{% url 'clinica:expediente_detail' mascota.pk %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Volver
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      {% if cita %}
+        <div class="alert alert-light border">
+          <div><strong>Cita:</strong> {{ cita.fecha|date:'d M Y H:i' }}</div>
+          <div><strong>Veterinario:</strong> {{ cita.veterinario.nombre_completo|default:cita.veterinario|default:'—' }}</div>
+        </div>
+      {% endif %}
+
+      <div class="mb-3">
+        <label class="form-label">Diagnóstico</label>
+        {{ form.diagnostico }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        {{ form.descripcion }}
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Cerrar consulta</label>
+          <div class="form-check">
+            {{ form.cerrar_consulta }}
+            <label class="form-check-label" for="id_cerrar_consulta">Sí, cerrar consulta</label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Crear cita de seguimiento</label>
+          {{ form.seguimiento_fecha }}
+          <div class="form-text">Opcional. Si se llena, se crea una nueva cita pendiente.</div>
+        </div>
+      </div>
+
+      <hr>
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h6 class="mb-0">Recetario</h6>
+        <button id="add-receta-item" class="btn btn-outline-secondary btn-sm" type="button">
+          <i class="fas fa-plus me-1"></i> Agregar ítem
+        </button>
+      </div>
+      <div class="text-muted small mb-2">Opcional.</div>
+
+      {{ receta_formset.management_form }}
+      <div id="receta-items">
+        {% for rf in receta_formset.forms %}
+          <div class="row g-2 align-items-end mb-2 receta-row">
+            {{ rf.id }}
+            <div class="col-md-6">
+              <label class="form-label">Producto</label>
+              {{ rf.producto }}
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Cantidad</label>
+              {{ rf.cantidad }}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Lote</label>
+              {{ rf.lote }}
+            </div>
+            <div class="col-md-1 text-end">
+              {% if rf.DELETE %}
+                <button type="button" class="btn btn-sm btn-outline-danger remove-receta"><i class="fas fa-trash"></i></button>
+                <span class="d-none">{{ rf.DELETE }}</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div id="receta-empty" class="d-none">
+        <div class="row g-2 align-items-end mb-2 receta-row">
+          <div class="col-md-6">
+            <label class="form-label">Producto</label>
+            {{ receta_formset.empty_form.producto }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Cantidad</label>
+            {{ receta_formset.empty_form.cantidad }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Lote</label>
+            {{ receta_formset.empty_form.lote }}
+          </div>
+          <div class="col-md-1 text-end">
+            {% if receta_formset.empty_form.DELETE %}
+              <button type="button" class="btn btn-sm btn-outline-danger remove-receta"><i class="fas fa-trash"></i></button>
+              <span class="d-none">{{ receta_formset.empty_form.DELETE }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end">
+        <a href="{% url 'clinica:expediente_detail' mascota.pk %}" class="btn btn-outline-secondary me-2">Cancelar</a>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-save me-1"></i> Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const addBtn = document.getElementById('add-receta-item');
+    const container = document.getElementById('receta-items');
+    const tmpl = document.getElementById('receta-empty');
+    const total = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    if (!addBtn || !container || !tmpl || !total) return;
+
+    function addRow(){
+      const idx = parseInt(total.value, 10);
+      let html = tmpl.innerHTML.replace(/__prefix__/g, String(idx));
+      const temp = document.createElement('div');
+      temp.innerHTML = html.trim();
+      const row = temp.firstElementChild;
+      if (!row) return;
+      container.appendChild(row);
+      total.value = idx + 1;
+    }
+
+    addBtn.addEventListener('click', addRow);
+
+    container.addEventListener('click', function(e){
+      const btn = e.target.closest('.remove-receta');
+      if (!btn) return;
+      const row = btn.closest('.receta-row');
+      if (!row) return;
+      const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (del) {
+        del.checked = true;
+        row.style.display = 'none';
+      } else {
+        row.remove();
+      }
+    });
+  })();
+</script>
+{% endblock content %}

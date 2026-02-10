@@ -1,0 +1,126 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Solicitudes de cita{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Citas' title='Solicitudes de cita' subtitle='Atiende solicitudes de dueños' %}
+
+{% if cita_asignada_msg %}
+  <div class="alert alert-warning">
+    {{ cita_asignada_msg }}
+  </div>
+{% endif %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr class="text-uppercase small text-muted">
+          <th>Mascota</th>
+          <th>Solicitante</th>
+          <th>Fecha preferida</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in solicitudes %}
+          <tr>
+            <td class="fw-semibold">{{ s.mascota.nombre }}</td>
+            <td>{{ s.solicitado_por.get_full_name|default:s.solicitado_por.username|default:'—' }}</td>
+            <td>{{ s.fecha_preferida|date:'d M Y H:i'|default:'—' }}</td>
+            <td>
+              {% if s.estado == 'PENDIENTE' %}
+                <span class="badge-soft">Pendiente</span>
+              {% elif s.estado == 'ATENDIDA' %}
+                <span class="chip"><i class="fas fa-check"></i> Atendida</span>
+              {% else %}
+                <span class="badge-soft">Rechazada</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if s.estado == 'PENDIENTE' and perms.clinica.change_solicitudcita %}
+                <div class="d-inline-flex gap-2">
+                  <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#assign-{{ s.pk }}" aria-expanded="false" aria-controls="assign-{{ s.pk }}">
+                    Asignar
+                  </button>
+                  <form method="post" action="{% url 'clinica:solicitud_cita_approve' s.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="rechazar">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Rechazar</button>
+                  </form>
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+          {% if s.estado == 'PENDIENTE' and perms.clinica.change_solicitudcita %}
+            <tr class="collapse" id="assign-{{ s.pk }}">
+              <td colspan="5" class="bg-light">
+                <form method="post" action="{% url 'clinica:solicitud_cita_approve' s.pk %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="aprobar">
+                  <div class="row g-3 align-items-end py-2">
+                    <div class="col-md-4">
+                      <label class="form-label small text-muted mb-1">Veterinario</label>
+                      <select name="veterinario" class="form-select form-select-sm" required>
+                        <option value="">Veterinario</option>
+                        {% for v in veterinarios %}
+                          <option value="{{ v.id }}">{{ v.nombre_completo }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-5">
+                      <label class="form-label small text-muted mb-1">Fecha a asignar</label>
+                      <input id="fecha-{{ s.pk }}" type="datetime-local" name="fecha" class="form-control form-control-sm" value="{{ s.fecha_preferida|date:'Y-m-d\\TH:i' }}">
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                      <button type="button" class="btn btn-sm btn-outline-secondary js-use-preferida" data-target="fecha-{{ s.pk }}" data-preferida="{{ s.fecha_preferida|date:'Y-m-d\\TH:i' }}" {% if not s.fecha_preferida %}disabled{% endif %}>
+                        Usar preferida
+                      </button>
+                      <button type="submit" class="btn btn-sm btn-success">Guardar</button>
+                    </div>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% endif %}
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">No hay solicitudes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.js-use-preferida').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var targetId = btn.getAttribute('data-target');
+        var preferida = btn.getAttribute('data-preferida');
+        if (!targetId || !preferida) return;
+        var input = document.getElementById(targetId);
+        if (input) {
+          input.value = preferida;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    });
+  });
+</script>
+{% endblock extra_js %}
+
+{% block extra_css %}
+<style>
+  .table .bg-light {
+    background-color: #f8fafc !important;
+  }
+  .table .form-select,
+  .table .form-control {
+    border-radius: 8px;
+  }
+</style>
+{% endblock extra_css %}

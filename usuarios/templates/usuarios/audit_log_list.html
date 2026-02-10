@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Auditoría{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Seguridad' title='Auditoría' subtitle='Cambios registrados por módulo' actions_partial='partials/actions/back.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-4">
+        <input name="model" type="search" value="{{ request.GET.model }}" class="form-control" placeholder="Modelo o módulo">
+      </div>
+      <div class="col-md-3">
+        <input name="user" type="search" value="{{ request.GET.user }}" class="form-control" placeholder="Usuario">
+      </div>
+      <div class="col-md-3">
+        <select name="action" class="form-select">
+          <option value="">Acción</option>
+          <option value="created" {% if request.GET.action == 'created' %}selected{% endif %}>Creado</option>
+          <option value="updated" {% if request.GET.action == 'updated' %}selected{% endif %}>Actualizado</option>
+          <option value="deleted" {% if request.GET.action == 'deleted' %}selected{% endif %}>Eliminado</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'usuarios:audit_logs' %}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Modelo</th>
+          <th>Acción</th>
+          <th>Usuario</th>
+          <th>Cambios</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in audits %}
+          <tr>
+            <td>{{ a.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ a.model_label }}</td>
+            <td>{{ a.action }}</td>
+            <td>{% if a.user %}{{ a.user.get_full_name|default:a.user.username }}{% else %}-{% endif %}</td>
+            <td class="text-muted small">{{ a.changes|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">Sin registros.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

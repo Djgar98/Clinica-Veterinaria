@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajustes de stock{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Ajustes de stock' subtitle='Solicitudes y aprobación de ajustes' actions_partial='partials/actions/ajustes_actions.html' %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Estado</th>
+          <th>Solicitado por</th>
+          <th>Fecha</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in ajustes %}
+          <tr>
+            <td>{{ a.producto.nombre }}</td>
+            <td class="fw-semibold {% if a.cantidad < 0 %}text-danger{% else %}text-success{% endif %}">{{ a.cantidad }}</td>
+            <td>{{ a.get_estado_display }}</td>
+            <td>{% if a.solicitado_por %}{{ a.solicitado_por.get_full_name|default:a.solicitado_por.username }}{% else %}-{% endif %}</td>
+            <td>{{ a.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="text-end">
+              {% if is_admin and a.estado == 'PENDIENTE' %}
+                <form method="post" action="{% url 'inventario:ajuste_approve' a.id %}" class="d-inline">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-success" type="submit">Aprobar</button>
+                </form>
+                <form method="post" action="{% url 'inventario:ajuste_reject' a.id %}" class="d-inline">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Rechazar</button>
+                </form>
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">No hay solicitudes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

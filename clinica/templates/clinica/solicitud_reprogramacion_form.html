@@ -1,0 +1,33 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Solicitar reprogramación{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Citas' title='Solicitar reprogramación' subtitle='Requiere aprobación' actions_partial='partials/actions/citas_back.html' %}
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nueva fecha</label>
+          {{ form.nueva_fecha }}
+        </div>
+        <div class="col-12">
+          <label class="form-label">Descripción / Motivo</label>
+          {{ form.descripcion }}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end mt-4">
+        <a href="{% url 'clinica:cita_detail' view.kwargs.pk %}" class="btn btn-outline-secondary me-2">Cancelar</a>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane me-1"></i> Enviar solicitud</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}

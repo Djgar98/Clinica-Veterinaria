@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recetario{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow">Recetas</div>
+    <h2 class="mb-1">Recetario</h2>
+    <p class="text-muted mb-0">Mascota: <strong>{{ receta.mascota.nombre }}</strong></p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-outline-secondary" type="button" onclick="window.print()">
+      <i class="fas fa-print me-1"></i> Imprimir
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <div class="text-muted small">Consulta</div>
+        <div class="fw-semibold">{{ receta.consulta.fecha|date:'d M Y H:i' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="text-muted small">Veterinario</div>
+        <div class="fw-semibold">{{ receta.consulta.medico.nombre_completo|default:receta.consulta.medico|default:'—' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="text-muted small">Estado</div>
+        <div class="fw-semibold">{{ receta.get_estado_display }}</div>
+      </div>
+      {% if receta.venta_id %}
+        <div class="col-md-6">
+          <div class="text-muted small">Venta</div>
+          <div class="fw-semibold">#{{ receta.venta_id }}</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="text-center">Cantidad</th>
+            <th>Lote</th>
+            <th class="text-end">Precio</th>
+            <th class="text-end">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in receta_items_priced %}
+            {% with item=row.item %}
+            <tr>
+              <td>{{ item.producto.nombre }}</td>
+              <td class="text-center">{{ item.cantidad }}</td>
+              <td>{{ item.lote|default:'—' }}</td>
+              <td class="text-end">C$ {{ row.price_final }}</td>
+              <td class="text-end">C$ {{ row.line_total }}</td>
+            </tr>
+            {% endwith %}
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted">No hay ítems en la receta.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if receta_items_priced %}
+        <tfoot>
+          <tr>
+            <th colspan="4" class="text-end">Total</th>
+            <th class="text-end">C$ {{ receta_total }}</th>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media print {
+    .page-header, .navbar, .sidebar, .footer, .btn { display: none !important; }
+    .card { border: 0; box-shadow: none; }
+  }
+</style>
+{% endblock content %}

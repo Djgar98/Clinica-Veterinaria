@@ -1,0 +1,92 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ventas{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Ventas' subtitle='Historial y control de facturación' actions_partial='partials/actions/ventas_actions.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-5">
+        <input name="q" type="search" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar por notas, cliente o vendedor">
+      </div>
+      <div class="col-md-2">
+        <input name="from" type="date" value="{{ request.GET.from }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <input name="to" type="date" value="{{ request.GET.to }}" class="form-control">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'inventario:venta_list' %}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="list-group">
+  {% for v in ventas %}
+    <div class="list-group-item">
+      <div class="d-flex w-100 justify-content-between align-items-start gap-3">
+        <div>
+          <h5 class="mb-1">Venta #{{ v.id }}</h5>
+          <div class="text-muted">Cliente:
+            {% if v.id_propietario %}
+              {{ v.id_propietario.get_full_name|default:v.id_propietario.username }}
+            {% else %}
+              {{ v.cliente_nombre|default:'—' }}
+            {% endif %}
+            — Vendedor: {{ v.vendedor|default:'—' }}
+          </div>
+          {% if v.notas %}<small class="text-muted">{{ v.notas }}</small>{% endif %}
+        </div>
+        <div class="text-end">
+          <div class="fw-semibold">C$ {{ v.total }}</div>
+          <div>
+            {% if v.estado == 'ANULADA' %}
+              <span class="badge-soft text-danger">Anulada</span>
+            {% elif v.estado == 'PAGADA' %}
+              <span class="chip text-success"><i class="fas fa-check"></i> Pagada</span>
+            {% else %}
+              <span class="badge-soft text-warning">Borrador</span>
+            {% endif %}
+          </div>
+          <small class="text-muted d-block">{{ v.fecha|date:'Y-m-d H:i' }}</small>
+          <div class="mt-2 d-flex justify-content-end gap-2">
+            <a href="{% url 'inventario:venta_detail' v.pk %}" class="btn btn-sm btn-outline-primary">Ver</a>
+            {% if not is_admin and v.estado != 'ANULADA' and perms.inventario.add_solicitudanulacionventa %}
+              {% if v.id in pending_anulaciones %}
+                <span class="badge-soft align-self-center">Anulación solicitada</span>
+              {% else %}
+                <form method="post" action="{% url 'inventario:venta_anulacion_request' v.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="text" name="motivo" class="form-control form-control-sm d-inline-block me-2" placeholder="Motivo" style="width: 160px;" required>
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Solicitar anulación</button>
+                </form>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="alert alert-light">No se encontraron ventas.</div>
+  {% endfor %}
+</div>
+
+{% if is_paginated %}
+  <nav class="mt-3">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+      {% endif %}
+      <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+{% endblock content %}

@@ -1,0 +1,7 @@
+<form method="get" class="d-flex gap-2" role="search" aria-label="Buscar mascotas">
+  <input name="q" class="form-control" placeholder="Buscar por nombre, especie o dueño" value="{{ request.GET.q|default:'' }}">
+  <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+</form>
+{% if perms.clinica.add_mascota %}
+  <a href="{% url 'clinica:crear_mascota' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Agregar Mascota</a>
+{% endif %}

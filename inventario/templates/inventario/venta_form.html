@@ -1,0 +1,736 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Venta{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow">Ventas</div>
+    <h2 class="mb-1">{% if object %}Editar venta #{{ object.id }}{% else %}Nueva venta{% endif %}</h2>
+    <p class="text-muted mb-0">Registra productos, cantidades y notas</p>
+  </div>
+  <div class="page-actions">
+    <span class="chip"><i class="fas fa-receipt"></i> Total: <strong id="venta-total-display">0.00</strong></span>
+    <a href="{% url 'inventario:venta_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      {% if form.errors or formset.non_form_errors %}
+        <div class="alert alert-warning" role="alert">
+          No se pudo guardar la venta. Revisa los campos e items.
+        </div>
+      {% endif %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-warning" role="alert">
+          {{ form.non_field_errors|striptags }}
+        </div>
+      {% endif %}
+      {% if formset.non_form_errors %}
+        <div class="alert alert-warning" role="alert">
+          {{ formset.non_form_errors|striptags }}
+        </div>
+      {% endif %}
+      {% if formset.errors %}
+        <div class="alert alert-warning" role="alert">
+          Errores en ítems: {{ formset.errors }}
+        </div>
+      {% endif %}
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Cliente</label>
+          {{ form.id_propietario }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Cliente ocasional</label>
+          {{ form.cliente_nombre }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Vendedor</label>
+          {{ form.vendedor }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Método de pago</label>
+          {{ form.metodo_pago }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Estado</label>
+          {{ form.estado }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">IVA aplicado</label>
+          <input type="text" class="form-control" value="{% if iva_rate == '0.15' %}15%{% else %}0%{% endif %}" disabled>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Notas</label>
+        {{ form.notas }}
+      </div>
+
+      <hr>
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h6 class="mb-0">Items de la venta</h6>
+      </div>
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-5">
+          <label class="form-label">Agregar por código</label>
+          <input id="quick-code" type="text" class="form-control form-control-sm" placeholder="Escanear o escribir código/SKU">
+        </div>
+        <div class="col-md-3 d-grid">
+          <button id="add-by-code" type="button" class="btn btn-outline-primary btn-sm">Agregar</button>
+        </div>
+      </div>
+
+      {{ formset.management_form }}
+      <div id="items">
+        {% for f in formset.forms %}
+          <div class="row g-2 align-items-end mb-2 border-bottom pb-2 formset-row">
+            {{ f.id }}
+            <div class="col-md-5">
+              <label class="form-label visually-hidden">Producto</label>
+              <input type="search" class="form-control form-control-sm product-autocomplete" placeholder="Buscar producto...">
+              {{ f.producto }}
+              <div class="product-meta small text-muted"></div>
+              {% if f.producto.errors %}<div class="invalid-feedback d-block">{{ f.producto.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label visually-hidden">Cantidad</label>
+              <div class="input-group input-group-sm">
+                <button type="button" class="btn btn-outline-secondary btn-decrease"><i class="fas fa-minus"></i></button>
+                {{ f.cantidad }}
+                <button type="button" class="btn btn-outline-secondary btn-increase"><i class="fas fa-plus"></i></button>
+              </div>
+              {% if f.cantidad.errors %}<div class="invalid-feedback d-block">{{ f.cantidad.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Precio (IVA incl.)</label>
+              {{ f.precio_unitario }}
+              {% if f.precio_unitario.errors %}<div class="invalid-feedback d-block">{{ f.precio_unitario.errors|striptags }}</div>{% endif %}
+            </div>
+            {% if allow_descuento %}
+              <div class="col-md-1">
+                <label class="form-label">Desc.</label>
+                {{ f.descuento }}
+                {% if f.descuento.errors %}<div class="invalid-feedback d-block">{{ f.descuento.errors|striptags }}</div>{% endif %}
+              </div>
+            {% else %}
+              {{ f.descuento.as_hidden }}
+            {% endif %}
+            <div class="col-md-1">
+              <label class="form-label">Lote</label>
+              {{ f.lote }}
+              <datalist class="lote-options"></datalist>
+              {% if f.lote.errors %}<div class="invalid-feedback d-block">{{ f.lote.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="col-md-1"><strong class="item-subtotal">0.00</strong></div>
+            <div class="col-md-1 text-end">
+              {% if f.DELETE %}
+                <button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="fas fa-trash"></i></button>
+                {{ f.DELETE }}
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div id="empty-form-template" class="d-none">
+        <div class="row g-2 align-items-end mb-2 border-bottom pb-2 formset-row">
+            <div class="col-md-5">
+              <label class="form-label visually-hidden">Producto</label>
+              <input type="search" class="form-control form-control-sm product-autocomplete" placeholder="Buscar producto...">
+              {{ formset.empty_form.producto }}
+              <div class="product-meta small text-muted"></div>
+            </div>
+          <div class="col-md-2">
+            <label class="form-label visually-hidden">Cantidad</label>
+            <div class="input-group input-group-sm">
+              <button type="button" class="btn btn-outline-secondary btn-decrease"><i class="fas fa-minus"></i></button>
+              {{ formset.empty_form.cantidad }}
+              <button type="button" class="btn btn-outline-secondary btn-increase"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Precio (IVA incl.)</label>
+            {{ formset.empty_form.precio_unitario }}
+          </div>
+          {% if allow_descuento %}
+            <div class="col-md-1">
+              <label class="form-label">Desc.</label>
+              {{ formset.empty_form.descuento }}
+            </div>
+          {% else %}
+            {{ formset.empty_form.descuento.as_hidden }}
+          {% endif %}
+          <div class="col-md-1">
+            <label class="form-label">Lote</label>
+            {{ formset.empty_form.lote }}
+            <datalist class="lote-options"></datalist>
+          </div>
+          <div class="col-md-1"><strong class="item-subtotal">0.00</strong></div>
+          <div class="col-md-1 text-end">
+            {% if formset.empty_form.DELETE %}
+              <button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="fas fa-trash"></i></button>
+              {{ formset.empty_form.DELETE }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end mt-4">
+        <button id="add-item-bottom" class="btn btn-outline-secondary" type="button">
+          <i class="fas fa-plus me-1"></i> Añadir item
+        </button>
+      </div>
+
+      <div class="venta-sticky-footer">
+        <div class="d-flex align-items-center gap-3">
+          <span class="text-muted small">Total</span>
+          <strong class="fs-5">C$ <span id="venta-total-display-footer">0.00</span></strong>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'inventario:venta_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+          <button class="btn btn-primary" type="submit"><i class="fas fa-save me-1"></i> Guardar Venta</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script id="products-json" type="application/json">{{ products_json|safe }}</script>
+<input type="hidden" id="venta-iva-rate" value="{{ iva_rate|default:'0' }}">
+<input type="hidden" id="venta-allow-descuento" value="{% if allow_descuento %}1{% else %}0{% endif %}">
+
+<script>
+(function(){
+  function debounce(fn, wait){ let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait); }; }
+
+  window.products = (() => {
+    try {
+      return JSON.parse(document.getElementById('products-json').textContent || '{}');
+    } catch (e) { return {}; }
+  })();
+  window.productsByCode = (() => {
+    const map = {};
+    Object.keys(window.products || {}).forEach((id) => {
+      const p = window.products[id];
+      if (p && p.codigo) {
+        map[p.codigo.toLowerCase()] = id;
+      }
+    });
+    return map;
+  })();
+
+  function createSuggestionsContainer(row){
+    let el = row.querySelector('.product-suggestions');
+    if (!el){
+      el = document.createElement('div');
+      el.className = 'product-suggestions list-group position-absolute';
+      el.style.zIndex = 2000; el.style.display='none'; el.style.maxHeight='220px'; el.style.overflow='auto';
+      const col = row.querySelector('.col-md-5');
+      col.style.position = 'relative';
+      col.appendChild(el);
+    }
+    return el;
+  }
+
+  const fetchRemote = debounce((q, cb) => {
+    if (!q) return cb([]);
+    fetch('/inventario/api/products/?q=' + encodeURIComponent(q)).then(r=>r.json()).then(d=>cb(d.results || [])).catch(()=>cb([]));
+  }, 200);
+
+  function ensureLoteList(row){
+    const input = row.querySelector('[name$="-lote"]');
+    let list = row.querySelector('.lote-options');
+    if (!input || !list) return null;
+    if (!list.id) {
+      list.id = 'lote-options-' + Math.random().toString(36).slice(2, 8);
+    }
+    input.setAttribute('list', list.id);
+    return list;
+  }
+
+  function updateLoteOptions(row, productId){
+    const input = row.querySelector('[name$="-lote"]');
+    const list = ensureLoteList(row);
+    if (!input || !list) return;
+    list.innerHTML = '';
+    if (!productId) return;
+    const p = window.products[productId];
+    if (!p || !p.lotes || !p.lotes.length) return;
+    p.lotes.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.lote;
+      opt.label = `${l.lote} - ${l.vencimiento || '-'} - ${l.stock}`;
+      list.appendChild(opt);
+    });
+    if (!input.value) {
+      input.value = p.lotes[0].lote;
+    }
+  }
+
+  function updateProductMeta(row){
+    const meta = row.querySelector('.product-meta');
+    const select = row.querySelector('[name$="-producto"]');
+    if (!meta || !select) return;
+    meta.innerHTML = '';
+    const p = window.products[select.value];
+    if (!p) return;
+    const items = [];
+    if (p.stock_minimo !== undefined && p.stock <= p.stock_minimo && p.tipo !== 'SERVICIO') {
+      items.push('<span class="text-danger">Stock bajo</span>');
+    }
+    if (p.tipo === 'MEDICAMENTO' && p.lotes && p.lotes.length) {
+      const today = new Date();
+      const soon = p.lotes.find(l => l.vencimiento && new Date(l.vencimiento) <= new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000));
+      if (soon) {
+        items.push('<span class="text-warning">Vence pronto</span>');
+      }
+    }
+    meta.innerHTML = items.join(' · ');
+  }
+
+  function getLotStock(row){
+    const select = row.querySelector('[name$="-producto"]');
+    const loteInput = row.querySelector('[name$="-lote"]');
+    if (!select || !select.value || !loteInput) return null;
+    const p = window.products[select.value];
+    if (!p || !p.lotes || !loteInput.value) return null;
+    const lot = p.lotes.find(l => l.lote === loteInput.value);
+    return lot ? parseInt(lot.stock || 0, 10) : null;
+  }
+
+  function bindAutocomplete(root){
+    const row = root;
+    const input = row.querySelector('.product-autocomplete');
+    const select = row.querySelector('[name$="-producto"]');
+    const suggestions = createSuggestionsContainer(row);
+    if (!input || !select) return;
+    select.style.display = 'none';
+
+    const cur = select.value;
+    if (cur && window.products && window.products[cur]){
+      input.value = window.products[cur].name;
+    }
+
+    input.addEventListener('input', function(){
+      const q = input.value.trim();
+      if (q.length < 1){ suggestions.style.display='none'; return; }
+      fetchRemote(q, function(results){
+        suggestions.innerHTML = '';
+        if (!results.length){ suggestions.style.display='none'; return; }
+        results.forEach(r=>{
+          const btn = document.createElement('button');
+          btn.type='button'; btn.className='list-group-item list-group-item-action';
+          btn.innerHTML = `<div><strong>${r.nombre}</strong> <small class="text-muted">${r.precio}</small></div>`;
+          btn.addEventListener('click', function(){
+            select.value = r.id;
+            input.value = r.nombre;
+            const priceField = row.querySelector('[name$="-precio_unitario"]');
+            if (priceField) priceField.value = r.precio;
+            const qtyField = row.querySelector('[name$="-cantidad"]');
+            if (qtyField && !qtyField.value) qtyField.value = 1;
+            suggestions.style.display='none';
+            updateLoteOptions(row, String(r.id));
+            const ev = new Event('change', { bubbles: true });
+            select.dispatchEvent(ev);
+            priceField && priceField.dispatchEvent(ev);
+          });
+          suggestions.appendChild(btn);
+        });
+        suggestions.style.display = 'block';
+      });
+    });
+
+    document.addEventListener('click', function(e){ if (!row.contains(e.target)) suggestions.style.display='none'; });
+  }
+
+  const addBtn = document.getElementById('add-item');
+  const formsetDiv = document.getElementById('items');
+  const formEl = document.querySelector('form');
+
+  function setReadonlyPriceAndHideDeletes(root){
+    (root || document).querySelectorAll('[name$="-precio_unitario"]').forEach(i => {
+      i.classList.add('precio-field', 'form-control', 'form-control-sm');
+    });
+    (root || document).querySelectorAll('[name$="-descuento"]').forEach(i => {
+      i.classList.add('form-control', 'form-control-sm');
+      i.value = '0.00';
+      i.setAttribute('readonly', 'readonly');
+    });
+    (root || document).querySelectorAll('[name$="-lote"]').forEach(i => {
+      i.classList.add('form-control', 'form-control-sm');
+    });
+    (root || document).querySelectorAll('[name$="-DELETE"]').forEach(c => {
+      c.style.display = 'none';
+    });
+  }
+
+  function resetNewRow(wrapper){
+    wrapper.querySelectorAll('input, select, textarea').forEach(el => {
+      if (el.name && el.name.endsWith('-DELETE')) {
+        el.checked = false;
+        return;
+      }
+      if (el.classList.contains('product-autocomplete')) {
+        el.value = '';
+        return;
+      }
+      if (el.name && el.name.endsWith('-cantidad')) {
+        el.value = '';
+        return;
+      }
+      if (el.name && el.name.endsWith('-precio_unitario')) {
+        el.value = '';
+        return;
+      }
+      if (el.name && el.name.endsWith('-descuento')) {
+        el.value = '0.00';
+        return;
+      }
+      if (el.name && el.name.endsWith('-lote')) {
+        el.value = '';
+        return;
+      }
+      if (el.tagName === 'SELECT') {
+        el.selectedIndex = 0;
+        return;
+      }
+      if (el.type !== 'hidden') {
+        el.value = '';
+      }
+    });
+  }
+
+  function addRowFromTemplate(){
+    const managementTotal = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    if (!managementTotal) return;
+    const prefix = managementTotal.name.replace('-TOTAL_FORMS', '');
+    const total = parseInt(managementTotal.value, 10);
+    const templateHost = document.getElementById('empty-form-template');
+    if (!templateHost) return;
+    let templateHtml = templateHost.innerHTML;
+    templateHtml = templateHtml.replace(/__prefix__/g, String(total));
+    const temp = document.createElement('div');
+    temp.innerHTML = templateHtml.trim();
+    const newRow = temp.firstElementChild;
+    if (!newRow) return;
+    formsetDiv.appendChild(newRow);
+    resetNewRow(newRow);
+    setReadonlyPriceAndHideDeletes(newRow);
+    bindAutocomplete(newRow);
+    managementTotal.value = total + 1;
+  }
+
+  if (addBtn) {
+    addBtn.addEventListener('click', addRowFromTemplate);
+  }
+  const addBtnBottom = document.getElementById('add-item-bottom');
+  if (addBtnBottom) {
+    addBtnBottom.addEventListener('click', addRowFromTemplate);
+  }
+
+  function normalizeEmptyRow(row){
+    const select = row.querySelector('[name$="-producto"]');
+    const qtyField = row.querySelector('[name$="-cantidad"]');
+    const priceField = row.querySelector('[name$="-precio_unitario"]');
+    const descuentoField = row.querySelector('[name$="-descuento"]');
+    const loteField = row.querySelector('[name$="-lote"]');
+    if (select && !select.value) {
+      if (qtyField) qtyField.value = '';
+      if (priceField) priceField.value = '';
+      if (descuentoField) descuentoField.value = '0.00';
+      if (loteField) loteField.value = '';
+    }
+  }
+
+  function clearRowSelection(row){
+    const input = row.querySelector('.product-autocomplete');
+    const select = row.querySelector('[name$="-producto"]');
+    const qtyField = row.querySelector('[name$="-cantidad"]');
+    const priceField = row.querySelector('[name$="-precio_unitario"]');
+    const loteField = row.querySelector('[name$="-lote"]');
+    if (input) input.value = '';
+    if (select) select.value = '';
+    if (qtyField) qtyField.value = '';
+    if (priceField) priceField.value = '';
+    if (loteField) loteField.value = '';
+  }
+
+  function getStockForRow(row){
+    const select = row.querySelector('[name$="-producto"]');
+    if (!select || !select.value) return null;
+    const lotStock = getLotStock(row);
+    if (lotStock !== null) return lotStock;
+    const p = window.products[select.value];
+    return p ? parseInt(p.stock || 0, 10) : null;
+  }
+
+  function updateSubtotal(row) {
+    const qtyField = row.querySelector('[name$="-cantidad"]');
+    const priceField = row.querySelector('[name$="-precio_unitario"]');
+    const discountField = row.querySelector('[name$="-descuento"]');
+    const qty = parseFloat(qtyField.value || 0);
+    const price = parseFloat(priceField.value || 0);
+    const discount = parseFloat(discountField && discountField.value ? discountField.value : 0);
+    const subtotal = Math.max(0, (qty * price) - discount) || 0;
+    const subtotalEl = row.querySelector('.item-subtotal');
+    if (subtotalEl) subtotalEl.textContent = subtotal.toFixed(2);
+    let total = 0;
+    document.querySelectorAll('.item-subtotal').forEach(el => { total += parseFloat(el.textContent || 0); });
+    const totalEl = document.getElementById('venta-total-display');
+    const totalFooterEl = document.getElementById('venta-total-display-footer');
+    if (totalEl) {
+      const globalDiscount = parseFloat(document.getElementById('id_descuento_global')?.value || 0);
+      const rate = parseFloat(document.getElementById('venta-iva-rate')?.value || 0);
+      const base = Math.max(0, total - globalDiscount);
+      // Precio ya incluye IVA, no sumar nuevamente.
+      const finalTotal = Math.max(0, base);
+      totalEl.textContent = finalTotal.toFixed(2);
+      if (totalFooterEl) totalFooterEl.textContent = finalTotal.toFixed(2);
+    }
+  }
+
+  function applyAutoDiscount(row) {
+    const allowManual = document.getElementById('venta-allow-descuento')?.value === '1';
+    const select = row.querySelector('[name$="-producto"]');
+    const qtyField = row.querySelector('[name$="-cantidad"]');
+    const priceField = row.querySelector('[name$="-precio_unitario"]');
+    const discountField = row.querySelector('[name$="-descuento"]');
+    if (!select || !discountField) return;
+    const p = window.products[select.value];
+    if (!p || !p.discount_active) {
+      if (!allowManual) {
+        discountField.value = '0.00';
+      }
+      return;
+    }
+    if (allowManual && discountField.dataset.auto === '0') return;
+    const qty = parseFloat(qtyField?.value || 0);
+    const price = parseFloat(priceField?.value || 0);
+    const pct = parseFloat(p.discount_pct || 0);
+    const discount = Math.max(0, (qty * price * pct) / 100);
+    discountField.value = discount.toFixed(2);
+    discountField.dataset.auto = '1';
+  }
+
+  formsetDiv.addEventListener('change', function(e){
+    const target = e.target;
+    const name = target.name || '';
+    const row = target.closest('.formset-row');
+    if (!row) return;
+    if (name.endsWith('-producto')){
+      const val = target.value;
+      if (window.products[val]){
+        const priceField = row.querySelector('[name$="-precio_unitario"]');
+        priceField.value = window.products[val].price;
+        updateLoteOptions(row, val);
+        const loteField = row.querySelector('[name$="-lote"]');
+        if (loteField && window.products[val].tipo !== 'MEDICAMENTO') {
+          loteField.value = window.products[val].lote || '';
+        }
+        const stock = window.products[val].stock;
+        const qtyField = row.querySelector('[name$="-cantidad"]');
+        if (window.products[val].tipo !== 'SERVICIO' && stock === 0) {
+          alert('Este producto no tiene stock disponible.');
+          clearRowSelection(row);
+          updateSubtotal(row);
+          return;
+        }
+        if (window.products[val].tipo !== 'SERVICIO' && parseInt(qtyField.value || '0',10) > stock){
+          alert('Stock insuficiente para ' + window.products[val].name + '. Stock disponible: ' + stock);
+          qtyField.value = stock;
+        }
+      }
+      updateProductMeta(row);
+      applyAutoDiscount(row);
+      updateSubtotal(row);
+    }
+    if (name.endsWith('-cantidad') || name.endsWith('-precio_unitario') || name.endsWith('-descuento')){
+      if (name.endsWith('-cantidad')) {
+        const stock = getStockForRow(row);
+        if (stock !== null) {
+          const qtyField = row.querySelector('[name$="-cantidad"]');
+          const current = parseInt(qtyField.value || '0', 10);
+          const select = row.querySelector('[name$="-producto"]');
+          const isServicio = select && window.products[select.value] && window.products[select.value].tipo === 'SERVICIO';
+          if (!isServicio && stock === 0) {
+            alert('Este producto no tiene stock disponible.');
+            clearRowSelection(row);
+            updateSubtotal(row);
+            return;
+          }
+          if (!isServicio && current > stock) {
+            alert('Stock insuficiente. Stock disponible: ' + stock);
+            qtyField.value = stock;
+          }
+        }
+      }
+      applyAutoDiscount(row);
+      updateSubtotal(row);
+    }
+  });
+
+  formsetDiv.addEventListener('click', function(e){
+    const btn = e.target.closest('.btn-decrease, .btn-increase, .remove-item');
+    if (!btn) return;
+    const row = btn.closest('.formset-row');
+    if (!row) return;
+      if (btn.classList.contains('btn-decrease') || btn.classList.contains('btn-increase')){
+      const qtyField = row.querySelector('[name$="-cantidad"]');
+      let v = parseInt(qtyField.value || '0', 10);
+      if (btn.classList.contains('btn-decrease')) v = Math.max(1, v - 1);
+      else v = v + 1 || 1;
+      const stock = getStockForRow(row);
+      const select = row.querySelector('[name$="-producto"]');
+      const isServicio = select && window.products[select.value] && window.products[select.value].tipo === 'SERVICIO';
+      if (!isServicio && stock !== null && v > stock) {
+        alert('Stock insuficiente. Stock disponible: ' + stock);
+        v = stock;
+      }
+      qtyField.value = v;
+      updateSubtotal(row);
+      return;
+    }
+    if (btn.classList.contains('remove-item')){
+      const delCheckbox = row.querySelector('[name$="-DELETE"]');
+      if (delCheckbox){
+        delCheckbox.checked = true;
+        row.style.display = 'none';
+        updateSubtotal(row);
+      } else {
+        row.remove();
+      }
+    }
+  });
+
+  if (formEl) {
+    formEl.addEventListener('submit', function(e){
+      let hasError = false;
+      document.querySelectorAll('.formset-row').forEach(row => {
+        const select = row.querySelector('[name$="-producto"]');
+        const input = row.querySelector('.product-autocomplete');
+        const qtyField = row.querySelector('[name$="-cantidad"]');
+        const priceField = row.querySelector('[name$="-precio_unitario"]');
+        if (input && input.value && select && !select.value) {
+          input.classList.add('is-invalid');
+          hasError = true;
+        }
+        if (select && select.value) {
+          if (qtyField && !qtyField.value) { qtyField.classList.add('is-invalid'); hasError = true; }
+          if (priceField && !priceField.value) { priceField.classList.add('is-invalid'); hasError = true; }
+        }
+      });
+      if (hasError) {
+        e.preventDefault();
+        alert('Selecciona el producto de la lista y completa cantidad y precio antes de guardar.');
+      }
+    });
+  }
+
+  const discountInput = document.getElementById('id_descuento_global');
+  if (discountInput) {
+    discountInput.addEventListener('input', () => {
+      document.querySelectorAll('.formset-row').forEach(r => updateSubtotal(r));
+    });
+  }
+
+  // If manual discounts are allowed, stop auto-updating when user edits.
+  const allowManual = document.getElementById('venta-allow-descuento')?.value === '1';
+  if (allowManual) {
+    formsetDiv.addEventListener('input', function(e){
+      const target = e.target;
+      if (target && (target.name || '').endsWith('-descuento')) {
+        target.dataset.auto = '0';
+      }
+    });
+  }
+
+  function addItemForProductId(productId){
+    let row = null;
+    document.querySelectorAll('.formset-row').forEach(r => {
+      const sel = r.querySelector('[name$="-producto"]');
+      if (sel && !sel.value && !row) row = r;
+    });
+    if (!row) {
+      addRowFromTemplate();
+      const rows = document.querySelectorAll('.formset-row');
+      row = rows[rows.length - 1];
+    }
+    const select = row.querySelector('[name$="-producto"]');
+    const input = row.querySelector('.product-autocomplete');
+    if (select) {
+      select.value = productId;
+      const p = window.products[productId];
+      if (input && p) input.value = p.name;
+      const ev = new Event('change', { bubbles: true });
+      select.dispatchEvent(ev);
+    }
+  }
+
+  const quickCode = document.getElementById('quick-code');
+  const addByCode = document.getElementById('add-by-code');
+  function handleQuickCode(){
+    const code = (quickCode?.value || '').trim().toLowerCase();
+    if (!code) return;
+    const pid = window.productsByCode[code];
+    if (!pid) {
+      alert('No se encontró producto con ese código.');
+      return;
+    }
+    addItemForProductId(pid);
+    quickCode.value = '';
+  }
+  if (addByCode) addByCode.addEventListener('click', handleQuickCode);
+  if (quickCode) quickCode.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleQuickCode(); }
+  });
+
+  setReadonlyPriceAndHideDeletes(document);
+  document.querySelectorAll('.formset-row').forEach(r => {
+    bindAutocomplete(r);
+    normalizeEmptyRow(r);
+    const select = r.querySelector('[name$="-producto"]');
+    if (select && select.value) {
+      updateLoteOptions(r, select.value);
+    }
+    updateProductMeta(r);
+    applyAutoDiscount(r);
+    updateSubtotal(r);
+  });
+
+})();
+</script>
+
+<style>
+  .venta-sticky-footer {
+    position: sticky;
+    bottom: 12px;
+    margin-top: 24px;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 5;
+  }
+  @media (max-width: 768px) {
+    .venta-sticky-footer {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .venta-sticky-footer .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+{% endblock content %}

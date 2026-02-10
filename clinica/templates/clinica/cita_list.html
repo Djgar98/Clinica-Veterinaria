@@ -1,0 +1,140 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Citas{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Agenda' title='Citas' subtitle='Programación y seguimiento' actions_partial='partials/actions/citas_actions.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="text-muted small">Ver:</span>
+      <button class="btn btn-sm btn-outline-secondary js-filter" type="button" data-target="all">Todas</button>
+      <button class="btn btn-sm btn-outline-secondary js-filter" type="button" data-target="pendientes">Por confirmar</button>
+      <button class="btn btn-sm btn-outline-secondary js-filter" type="button" data-target="confirmadas">Confirmadas/Reprogramadas</button>
+      <button class="btn btn-sm btn-outline-secondary js-filter" type="button" data-target="canceladas">Canceladas</button>
+      <button class="btn btn-sm btn-outline-secondary js-filter" type="button" data-target="atendidas">Atendidas</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Mascota</th>
+          <th>Veterinario</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="section-body" id="section-pendientes">
+        <tr class="table-light section-toggle" data-target="section-pendientes">
+          <td colspan="5" class="fw-semibold text-muted d-flex align-items-center justify-content-between">
+            <span>Por confirmar</span>
+            <span class="d-flex align-items-center gap-2">
+              <span class="badge bg-secondary">{{ citas_por_confirmar|length }}</span>
+              <i class="fas fa-chevron-down"></i>
+            </span>
+          </td>
+        </tr>
+        {% for c in citas_por_confirmar %}
+          {% include 'clinica/partials/cita_list_row.html' with c=c receta_pendiente_ids=receta_pendiente_ids %}
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No hay citas por confirmar.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tbody class="section-body" id="section-confirmadas">
+        <tr class="table-light section-toggle" data-target="section-confirmadas">
+          <td colspan="5" class="fw-semibold text-muted d-flex align-items-center justify-content-between">
+            <span>Confirmadas / Reprogramadas</span>
+            <span class="d-flex align-items-center gap-2">
+              <span class="badge bg-secondary">{{ citas_confirmadas|length }}</span>
+              <i class="fas fa-chevron-down"></i>
+            </span>
+          </td>
+        </tr>
+        {% for c in citas_confirmadas %}
+          {% include 'clinica/partials/cita_list_row.html' with c=c receta_pendiente_ids=receta_pendiente_ids %}
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No hay citas confirmadas o reprogramadas.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tbody class="section-body" id="section-canceladas">
+        <tr class="table-light section-toggle" data-target="section-canceladas">
+          <td colspan="5" class="fw-semibold text-muted d-flex align-items-center justify-content-between">
+            <span>Canceladas</span>
+            <span class="d-flex align-items-center gap-2">
+              <span class="badge bg-secondary">{{ citas_canceladas|length }}</span>
+              <i class="fas fa-chevron-down"></i>
+            </span>
+          </td>
+        </tr>
+        {% for c in citas_canceladas %}
+          {% include 'clinica/partials/cita_list_row.html' with c=c receta_pendiente_ids=receta_pendiente_ids %}
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No hay citas canceladas.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tbody class="section-body" id="section-atendidas">
+        <tr class="table-light section-toggle" data-target="section-atendidas">
+          <td colspan="5" class="fw-semibold text-muted d-flex align-items-center justify-content-between">
+            <span>Atendidas</span>
+            <span class="d-flex align-items-center gap-2">
+              <span class="badge bg-secondary">{{ citas_atendidas|length }}</span>
+              <i class="fas fa-chevron-down"></i>
+            </span>
+          </td>
+        </tr>
+        {% for c in citas_atendidas %}
+          {% include 'clinica/partials/cita_list_row.html' with c=c receta_pendiente_ids=receta_pendiente_ids %}
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No hay citas atendidas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const buttons = document.querySelectorAll('.js-filter');
+    const sections = {
+      pendientes: document.getElementById('section-pendientes'),
+      confirmadas: document.getElementById('section-confirmadas'),
+      canceladas: document.getElementById('section-canceladas'),
+      atendidas: document.getElementById('section-atendidas'),
+    };
+    function showSection(target){
+      Object.keys(sections).forEach((key)=>{
+        const el = sections[key];
+        if (!el) return;
+        el.style.display = (target === 'all' || target === key) ? '' : 'none';
+      });
+    }
+    buttons.forEach((btn)=>{
+      btn.addEventListener('click', ()=>{
+        showSection(btn.getAttribute('data-target'));
+      });
+    });
+    document.querySelectorAll('.section-toggle').forEach((row)=>{
+      row.addEventListener('click', ()=>{
+        const target = row.getAttribute('data-target');
+        const section = document.getElementById(target);
+        if (!section) return;
+        const rows = Array.from(section.querySelectorAll('tr')).slice(1);
+        const isHidden = rows.length && rows[0].style.display === 'none';
+        rows.forEach((r)=>{ r.style.display = isHidden ? '' : 'none'; });
+        const icon = row.querySelector('i.fas');
+        if (icon) {
+          icon.classList.toggle('fa-chevron-down', isHidden);
+          icon.classList.toggle('fa-chevron-right', !isHidden);
+        }
+      });
+    });
+  })();
+</script>
+{% endblock content %}

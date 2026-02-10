@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Logs de acceso{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Seguridad' title='Logs de acceso' subtitle='Registro de accesos por usuario' actions_partial='partials/actions/back.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-4">
+        <input name="user" type="search" value="{{ request.GET.user }}" class="form-control" placeholder="Usuario">
+      </div>
+      <div class="col-md-4">
+        <input name="path" type="search" value="{{ request.GET.path }}" class="form-control" placeholder="Ruta">
+      </div>
+      <div class="col-md-2">
+        <input name="status" type="number" value="{{ request.GET.status }}" class="form-control" placeholder="Status">
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'usuarios:access_logs' %}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Usuario</th>
+          <th>Método</th>
+          <th>Status</th>
+          <th>Ruta</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in logs %}
+          <tr>
+            <td>{{ l.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ l.user.get_full_name|default:l.user.username }}</td>
+            <td>{{ l.method }}</td>
+            <td>{{ l.status_code }}</td>
+            <td class="text-muted">{{ l.path }}</td>
+            <td>{{ l.ip_address|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">Sin registros.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

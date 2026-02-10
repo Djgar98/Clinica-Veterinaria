@@ -1,0 +1,6 @@
+<a href="{% url 'inventario:list' %}" class="btn btn-outline-secondary">
+  <i class="fas fa-arrow-left me-1"></i> Volver
+</a>
+{% if perms.inventario.add_stockadjustmentrequest %}
+  <a href="{% url 'inventario:ajuste_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Nuevo ajuste</a>
+{% endif %}

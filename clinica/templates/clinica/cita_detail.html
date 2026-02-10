@@ -1,0 +1,264 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cita{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Citas' title='Detalle de cita' subtitle=cita.mascota.nombre actions_partial='partials/actions/citas_back.html' %}
+
+<div class="card">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="text-muted small">Mascota</div>
+        <div class="fw-semibold">{{ cita.mascota.nombre }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="text-muted small">Veterinario</div>
+        <div class="fw-semibold">{{ cita.veterinario.nombre_completo|default:cita.veterinario|default:'—' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="text-muted small">Fecha</div>
+        <div class="fw-semibold">{{ cita.fecha|date:'d M Y H:i' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="text-muted small">Estado</div>
+        <div class="fw-semibold">
+          {% if cita.estado == 'PENDIENTE' %}
+            <span class="badge-soft text-primary">Por confirmar</span>
+          {% elif cita.estado == 'CONFIRMADA' %}
+            <span class="chip text-info"><i class="fas fa-check"></i> Confirmada</span>
+          {% elif cita.estado == 'REPROGRAMADA' %}
+            <span class="badge-soft text-purple">Reprogramada</span>
+          {% elif cita.estado == 'ATENDIDA' %}
+            <span class="chip text-success"><i class="fas fa-check"></i> Atendida</span>
+          {% else %}
+            <span class="badge-soft text-danger">Cancelada</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="text-muted small">Notas</div>
+        <div>{{ cita.notas|default:'—' }}</div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-4">
+      {% if perms.clinica.change_cita %}
+        {% if cita.estado != 'ATENDIDA' or is_admin %}
+        <a href="{% url 'clinica:cita_edit' cita.pk %}" class="btn btn-outline-secondary me-2">
+          <i class="fas fa-pen me-1"></i> Editar cita
+        </a>
+        {% endif %}
+        {% if cita.estado != 'CANCELADA' and cita.estado != 'ATENDIDA' %}
+          <form method="post" action="{% url 'clinica:cita_status' cita.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancelar">
+            <button type="submit" class="btn btn-outline-danger me-2">
+              <i class="fas fa-times me-1"></i> Cancelar
+            </button>
+          </form>
+        {% endif %}
+      {% endif %}
+      {% if cita.estado == 'PENDIENTE' %}
+        {% if perms.clinica.change_cita %}
+          <form method="post" action="{% url 'clinica:cita_status' cita.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="confirmar">
+            <button type="submit" class="btn btn-outline-success me-2">
+              <i class="fas fa-check me-1"></i> Confirmar
+            </button>
+          </form>
+        {% elif is_owner_only %}
+          {% if request.user == cita.mascota.owner %}
+            <form method="post" action="{% url 'clinica:cita_status' cita.pk %}" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="confirmar">
+              <button type="submit" class="btn btn-outline-success me-2">
+                <i class="fas fa-check me-1"></i> Confirmar
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+      {% if is_owner_only and request.user == cita.mascota.owner %}
+        {% if cita.estado != 'CANCELADA' and cita.estado != 'ATENDIDA' %}
+          <form method="post" action="{% url 'clinica:cita_status' cita.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancelar">
+            <button type="submit" class="btn btn-outline-danger me-2">
+              <i class="fas fa-times me-1"></i> Cancelar
+            </button>
+          </form>
+          <a href="{% url 'clinica:solicitud_reprogramacion_create' cita.pk %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-calendar-alt me-1"></i> Reprogramar
+          </a>
+        {% endif %}
+      {% endif %}
+      {% if cita.veterinario and request.user.staff_profile and cita.veterinario_id == request.user.staff_profile.id %}
+        {% if cita.estado == 'PENDIENTE' or cita.estado == 'CONFIRMADA' or cita.estado == 'REPROGRAMADA' %}
+          <a href="{% url 'clinica:agregar_consulta' cita.pk %}" class="btn btn-primary">
+            <i class="fas fa-stethoscope me-1"></i> Abrir consulta
+          </a>
+          <a href="{% url 'clinica:solicitud_reprogramacion_create' cita.pk %}" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-calendar-alt me-1"></i> Reprogramar
+          </a>
+        {% endif %}
+      {% endif %}
+    </div>
+    {% if cita.reprogramaciones.all %}
+      {% for r in cita.reprogramaciones.all %}
+        {% if r.solicitado_por_id == request.user.id and r.estado == 'RECHAZADA' %}
+          <div class="alert alert-warning mt-3">
+            {{ r.motivo_rechazo }}
+            <a class="btn btn-sm btn-outline-primary ms-2" href="{% url 'clinica:solicitud_reprogramacion_edit' r.pk %}">
+              Editar solicitud
+            </a>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+{% if cita.estado == 'ATENDIDA' %}
+  <div class="card mt-4">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <h6 class="mb-0">Resumen de la cita</h6>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#resumen-cita" aria-expanded="false" aria-controls="resumen-cita">
+        Ver resumen
+      </button>
+    </div>
+    <div id="resumen-cita" class="collapse">
+      <div class="card-body">
+        {% if ultima_consulta %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="text-muted small">Diagnóstico</div>
+              <div class="fw-semibold">{{ ultima_consulta.diagnostico }}</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-muted small">Médico</div>
+              <div class="fw-semibold">{{ ultima_consulta.medico.nombre_completo|default:ultima_consulta.medico|default:'—' }}</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-muted small">Fecha de consulta</div>
+              <div class="fw-semibold">{{ ultima_consulta.fecha|date:'d M Y H:i' }}</div>
+            </div>
+            <div class="col-12">
+              <div class="text-muted small">Descripción</div>
+              <div>{{ ultima_consulta.descripcion|default:'—' }}</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-muted">No hay información de consulta registrada.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+{% if not is_dueno and ultima_receta %}
+  <div class="card mt-4">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <div>
+        <h6 class="mb-0">Recetario</h6>
+        <div class="text-muted small">Estado: {{ ultima_receta.get_estado_display }}</div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{% url 'clinica:receta_print' ultima_receta.pk %}" class="btn btn-sm btn-outline-secondary">
+          <i class="fas fa-print me-1"></i> Imprimir
+        </a>
+        {% if ultima_receta.venta_id %}
+          <a href="{% url 'inventario:venta_detail' ultima_receta.venta_id %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-receipt me-1"></i> Ver venta
+          </a>
+        {% endif %}
+        {% if can_receta_manage and ultima_receta.estado == 'PENDIENTE' %}
+          <form method="post" action="{% url 'clinica:receta_approve' ultima_receta.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success">
+              <i class="fas fa-check me-1"></i> Aceptar
+            </button>
+          </form>
+          <form method="post" action="{% url 'clinica:receta_reject' ultima_receta.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+              <i class="fas fa-times me-1"></i> Rechazar
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="text-center">Cantidad</th>
+            <th>Lote</th>
+            <th class="text-end">Precio</th>
+            <th class="text-end">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in receta_items_priced %}
+            {% with item=row.item %}
+            <tr>
+              <td>{{ item.producto.nombre }}</td>
+              <td class="text-center">{{ item.cantidad }}</td>
+              <td>{{ item.lote|default:'—' }}</td>
+              <td class="text-end">C$ {{ row.price_final }}</td>
+              <td class="text-end">C$ {{ row.line_total }}</td>
+            </tr>
+            {% endwith %}
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted">No hay ítems en la receta.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if receta_items_priced %}
+        <tfoot>
+          <tr>
+            <th colspan="4" class="text-end">Total</th>
+            <th class="text-end">C$ {{ receta_total }}</th>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+{% endif %}
+
+{% if not is_dueno %}
+  <div class="card mt-4">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between">
+      <h6 class="mb-0">Historial de la cita</h6>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'clinica:cita_history_list' %}?cita={{ cita.id }}">Ver todo</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>Evento</th>
+            <th>Detalle</th>
+            <th>Usuario</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in historial %}
+            <tr>
+              <td>{{ e.get_tipo_display }}</td>
+              <td class="text-muted">{{ e.detalle|default:'—' }}</td>
+              <td>{{ e.created_by.get_full_name|default:e.created_by.username|default:'—' }}</td>
+              <td>{{ e.created_at|date:'d M Y H:i' }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="text-center text-muted">No hay eventos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+{% endblock content %}

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Producto{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title=producto.nombre subtitle='Ficha del producto' actions_partial='partials/actions/producto_back.html' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4"><strong>Categoría:</strong> {{ producto.categoria.name }}</div>
+      <div class="col-md-4"><strong>Tipo:</strong> {{ producto.get_tipo_display }}</div>
+      <div class="col-md-4"><strong>Precio (IVA incl.):</strong> C$ {{ producto.precio_con_iva }}</div>
+      <div class="col-md-4"><strong>Stock:</strong> {{ producto.stock_inicial }}</div>
+      <div class="col-md-4"><strong>Mínimo:</strong> {{ producto.stock_minimo }}</div>
+      <div class="col-md-4"><strong>Proveedor:</strong> {{ producto.proveedor|default:"-" }}</div>
+      <div class="col-md-4"><strong>Descuento:</strong>
+        {% if producto.descuento_activo %}
+          {{ producto.descuento_pct }}% (activo)
+          {% if producto.descuento_desde or producto.descuento_hasta %}
+            <span class="text-muted">({{ producto.descuento_desde|default:"-" }} a {{ producto.descuento_hasta|default:"-" }})</span>
+          {% endif %}
+        {% elif producto.descuento_tipo_pct %}
+          {{ producto.descuento_tipo_pct }}% (tipo)
+        {% elif producto.descuento_pct and producto.descuento_pct > 0 %}
+          {{ producto.descuento_pct }}% (inactivo)
+          {% if producto.descuento_desde or producto.descuento_hasta %}
+            <span class="text-muted">({{ producto.descuento_desde|default:"-" }} a {{ producto.descuento_hasta|default:"-" }})</span>
+          {% endif %}
+        {% else %}
+          -
+        {% endif %}
+      </div>
+      <div class="col-md-12"><strong>Descripción:</strong> {{ producto.descripcion|default:"-" }}</div>
+    </div>
+  </div>
+</div>
+
+{% if producto.tipo == 'MEDICAMENTO' %}
+  <div class="card">
+    <div class="card-header">Lotes</div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Lote</th>
+            <th>Vencimiento</th>
+            <th>Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in producto.lotes.all %}
+            <tr>
+              <td>{{ l.lote }}</td>
+              <td>{{ l.fecha_vencimiento|default:"-" }}</td>
+              <td>{{ l.cantidad }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="text-center text-muted">No hay lotes registrados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white">Movimientos recientes</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in movimientos %}
+              <tr>
+                <td>{{ m.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ m.get_tipo_display }}</td>
+                <td class="{% if m.cantidad < 0 %}text-danger{% else %}text-success{% endif %}">{{ m.cantidad }}</td>
+                <td>{% if m.created_by %}{{ m.created_by.get_full_name|default:m.created_by.username }}{% else %}-{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted">Sin movimientos recientes.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white">Ventas recientes</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Venta</th>
+              <th>Cantidad</th>
+              <th>Precio</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in ventas_items %}
+              <tr>
+                <td>#{{ it.venta_id }}</td>
+                <td>{{ it.cantidad }}</td>
+                <td>{{ it.precio_unitario }}</td>
+                <td>{{ it.venta.fecha|date:"Y-m-d" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted">Sin ventas recientes.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

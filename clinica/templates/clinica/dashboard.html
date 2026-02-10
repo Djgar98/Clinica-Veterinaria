@@ -1,0 +1,897 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inicio{% endblock %}
+{% block content_col_class %}col-12{% endblock %}
+
+{% block content %}
+{% if is_dueno or is_veterinario or is_asistente %}
+  {% if is_dueno and not is_veterinario and not is_asistente %}
+    {% include 'partials/page_header.html' with eyebrow='Mis citas' title='Calendario de citas' subtitle='Solo tus mascotas asignadas' %}
+  {% elif is_veterinario %}
+    {% include 'partials/page_header.html' with eyebrow='Mi agenda' title='Calendario de citas' subtitle='Consultas asignadas a ti' %}
+  {% elif is_asistente %}
+    {% include 'partials/page_header.html' with eyebrow='Agenda' title='Calendario de citas' subtitle='Citas y solicitudes pendientes' %}
+  {% else %}
+    {% include 'partials/page_header.html' with eyebrow='Agenda' title='Próximas citas' subtitle='Todas las citas siguientes' %}
+  {% endif %}
+
+  {% if is_veterinario or is_asistente or is_dueno %}
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Próximas citas</div>
+            <h4 class="mb-0">{{ upcoming_citas|length }}</h4>
+          </div>
+        </div>
+      </div>
+      {% if is_asistente %}
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="text-muted small">Solicitudes pendientes</div>
+              <h4 class="mb-0">{{ solicitudes_pendientes|default:0 }}</h4>
+              <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:solicitud_cita_list' %}">Ver solicitudes</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="text-muted small">Reprogramaciones</div>
+              <h4 class="mb-0">{{ reprog_pendientes|default:0 }}</h4>
+              <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:solicitud_reprogramacion_list' %}">Ver reprogramaciones</a>
+            </div>
+          </div>
+        </div>
+      {% elif is_veterinario %}
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="text-muted small">Reprogramaciones pendientes</div>
+              <h4 class="mb-0">{{ reprog_pendientes|default:0 }}</h4>
+              <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:solicitud_reprogramacion_list' %}">Ver reprogramaciones</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="text-muted small">Atajos</div>
+              <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:cita_list' %}">Ver agenda</a>
+            </div>
+          </div>
+        </div>
+      {% elif is_dueno and not is_veterinario and not is_asistente %}
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="text-muted small">Solicitudes de cita</div>
+              <h4 class="mb-0">{{ solicitudes_pendientes|default:0 }}</h4>
+              <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:solicitud_cita_create' %}">Nueva solicitud</a>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-body">
+            <div id="calendar" data-default-view="{% if is_asistente %}dayGridMonth{% elif is_dueno %}dayGridMonth{% else %}timeGridWeek{% endif %}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        {% if is_veterinario %}
+          <div class="card mb-4">
+            <div class="card-header bg-white">
+              <h6 class="mb-0">Resumen clínico</h6>
+            </div>
+            <div class="card-body">
+              <div class="d-flex justify-content-between">
+                <span class="text-muted small">Citas hoy</span>
+                <strong>{{ citas_hoy_vet|default:0 }}</strong>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span class="text-muted small">Consultas abiertas</span>
+                <strong>{{ consultas_abiertas|default:0 }}</strong>
+              </div>
+              <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:cita_list' %}">Ver agenda</a>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if is_asistente %}
+        {% else %}
+        <div class="card mb-4">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Próximas citas</h6>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'clinica:cita_list' %}">Ver todas</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Mascota</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in upcoming_citas %}
+                  <tr>
+                    <td class="fw-semibold">{{ c.mascota.nombre }}</td>
+                    <td>{{ c.fecha|date:'d M Y H:i' }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2" class="text-center text-muted">Sin citas próximas.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+        {% if not is_veterinario %}
+        <div class="card">
+          {% if is_asistente and perms.inventario.view_recordatorio %}
+            <div class="card-header bg-white">
+              <h6 class="mb-0">Recordatorios pendientes</h6>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th>Título</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in recordatorios_proximos %}
+                    <tr>
+                      <td class="fw-semibold">{{ r.titulo }}</td>
+                      <td>{{ r.fecha|date:'d M Y H:i' }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="2" class="text-center text-muted">No hay recordatorios.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="border-top"></div>
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Recordatorios de citas</h6>
+            <div class="d-flex gap-2 align-items-center">
+              <span class="badge-soft">{{ reminders_pending|default:0 }}</span>
+              <a href="{% url 'clinica:cita_reminder_list' %}" class="btn btn-sm btn-outline-secondary">Ver todos</a>
+              <form method="post" action="{% url 'clinica:cita_reminders_generate' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Generar recordatorios</button>
+              </form>
+            </div>
+          </div>
+          {% if reminders_pending %}
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th>Cita</th>
+                    <th>Canal</th>
+                    <th>Programado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in reminders_upcoming %}
+                    <tr>
+                      <td class="fw-semibold">{{ r.cita.mascota.nombre }}</td>
+                      <td>{{ r.get_canal_display }}</td>
+                      <td>{{ r.programado_para|date:'d M Y H:i' }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="card-body">
+              <div class="text-muted small">No hay recordatorios pendientes.</div>
+            </div>
+          {% endif %}
+          {% elif is_dueno %}
+            {% if solicitud_status_latest %}
+              <div class="card-header bg-white">
+                <h6 class="mb-0">Resumen de tu solicitud</h6>
+              </div>
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted small">Paciente</span>
+                  <strong>{{ solicitud_status_latest.mascota.nombre }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted small">Resultado</span>
+                  {% if solicitud_status_latest.estado == 'ATENDIDA' %}
+                    <span class="chip"><i class="fas fa-check"></i> Atendida</span>
+                  {% else %}
+                    <span class="badge-soft">Rechazada</span>
+                  {% endif %}
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted small">Fecha de la cita</span>
+                  <strong>
+                    {% if solicitud_status_latest.cita_asignada %}
+                      {{ solicitud_status_latest.cita_asignada.fecha|date:'d M Y H:i' }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted small">Última actualización</span>
+                  <strong>{{ solicitud_status_latest.updated_at|default:solicitud_status_latest.created_at|date:'d M Y H:i' }}</strong>
+                </div>
+              </div>
+              <div class="border-top"></div>
+            {% endif %}
+            <div class="card-header bg-white">
+              <h6 class="mb-0">Historial de solicitudes</h6>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th>Paciente</th>
+                    <th>Resultado</th>
+                    <th>Fecha de la cita</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in solicitudes_recientes %}
+                    <tr>
+                      <td class="fw-semibold">{{ s.mascota.nombre }}</td>
+                      <td>
+                        {% if s.estado == 'PENDIENTE' %}
+                          <span class="badge-soft">Pendiente</span>
+                        {% elif s.estado == 'ATENDIDA' %}
+                          <span class="chip"><i class="fas fa-check"></i> Atendida</span>
+                        {% else %}
+                          <span class="badge-soft">Rechazada</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if s.cita_asignada %}
+                          {{ s.cita_asignada.fecha|date:'d M Y H:i' }}
+                        {% else %}
+                          {{ s.created_at|date:'d M Y H:i' }}
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="3" class="text-center text-muted">No hay solicitudes.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="card-header bg-white">
+              <h6 class="mb-0">Recordatorios pendientes</h6>
+            </div>
+            <div class="card-body">
+              <div class="text-muted small">Tienes {{ reminders_pending|default:0 }} recordatorios pendientes.</div>
+            </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if is_asistente %}
+        <div class="card mb-4 mt-4">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Próximas citas</h6>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'clinica:cita_list' %}">Ver todas</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Mascota</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in upcoming_citas %}
+                  <tr>
+                    <td class="fw-semibold">{{ c.mascota.nombre }}</td>
+                    <td>{{ c.fecha|date:'d M Y H:i' }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2" class="text-center text-muted">Sin citas próximas.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+    <style>
+      #calendar .fc-event {
+        border-radius: 8px;
+        padding: 2px 6px;
+        font-size: 0.75rem;
+      }
+      #calendar .fc-event-title {
+        white-space: normal;
+      }
+      #calendar .fc-timegrid-event {
+        min-height: 24px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var defaultView = calendarEl.getAttribute('data-default-view') || 'timeGridWeek';
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: defaultView,
+          height: 520,
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+          },
+          eventDisplay: 'block',
+          dayMaxEventRows: 3,
+          eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+          locale: 'es',
+          nowIndicator: true,
+          events: '{% url "clinica:cita_events" %}',
+          eventClick: function(info) {
+            if (info.event.url) {
+              window.location = info.event.url;
+              info.jsEvent.preventDefault();
+            }
+          }
+        });
+        calendar.render();
+      });
+    </script>
+  {% else %}
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Mascota</th>
+              <th>Fecha</th>
+              <th>Veterinario</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in upcoming_citas %}
+              <tr>
+                <td class="fw-semibold">{{ c.mascota.nombre }}</td>
+                <td>{{ c.fecha|date:'d M Y H:i' }}</td>
+                <td>{{ c.veterinario.nombre_completo|default:c.veterinario|default:'—' }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">No hay citas próximas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+{% else %}
+  {% if is_admin %}
+    {% include 'partials/page_header.html' with eyebrow='Admin' title='Panel de control' subtitle='Resumen operativo y seguridad' actions_partial='partials/actions/dashboard_actions.html' %}
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Ventas hoy</div>
+            <h4 class="mb-0">{{ ventas_hoy_total }}</h4>
+            <div class="text-muted small">{{ ventas_hoy_count }} ventas</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Ventas del mes</div>
+            <h4 class="mb-0">{{ ventas_mes_total|default:0 }}</h4>
+            <div class="text-muted small">{{ ventas_mes_count|default:0 }} ventas</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Stock crítico</div>
+            <h4 class="mb-0">{{ stock_critico_count }}</h4>
+            <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'inventario:list' %}">Ver inventario</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Lotes por vencer</div>
+            <h4 class="mb-0">{{ lotes_por_vencer|length }}</h4>
+            <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'inventario:lotes_vencer' %}">Ver lotes</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Solicitudes de cita</div>
+            <h4 class="mb-0">{{ solicitudes_cita_pendientes|default:0 }}</h4>
+            <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:solicitud_cita_list' %}">Ver solicitudes</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Reprogramaciones</div>
+            <h4 class="mb-0">{{ reprog_pendientes_admin|default:0 }}</h4>
+            <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'clinica:solicitud_reprogramacion_list' %}">Ver reprogramaciones</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Anulaciones pendientes</div>
+            <h4 class="mb-0">{{ anulaciones_pendientes|default:0 }}</h4>
+            <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'inventario:anulacion_list' %}">Ver anulaciones</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Ajustes pendientes</div>
+            <h4 class="mb-0">{{ ajustes_pendientes|default:0 }}</h4>
+            <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'inventario:ajuste_list' %}">Ver ajustes</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Ventas recientes</h6>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'inventario:venta_list' %}">Ver ventas</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Venta</th>
+                  <th>Cliente</th>
+                  <th>Total</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in ventas_recientes %}
+                  <tr>
+                    <td>#{{ v.id }}</td>
+                    <td>
+                      {% if v.id_propietario %}
+                        {{ v.id_propietario.get_full_name|default:v.id_propietario.username }}
+                      {% else %}
+                        {{ v.cliente_nombre|default:'—' }}
+                      {% endif %}
+                    </td>
+                    <td>{{ v.total }}</td>
+                    <td>{{ v.fecha|date:'d M Y H:i' }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted">Sin ventas recientes.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Actividad reciente</h6>
+            <div class="d-flex gap-2">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'usuarios:access_logs' %}">Accesos</a>
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'usuarios:audit_logs' %}">Auditoría</a>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Modelo</th>
+                  <th>Acción</th>
+                  <th>Usuario</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in audit_recientes %}
+                  <tr>
+                    <td>{{ a.model_label }}</td>
+                    <td>{{ a.action }}</td>
+                    <td>{% if a.user %}{{ a.user.get_full_name|default:a.user.username }}{% else %}-{% endif %}</td>
+                    <td>{{ a.created_at|date:'d M Y H:i' }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted">Sin actividad.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Stock crítico</h6>
+            <a href="{% url 'inventario:list' %}" class="btn btn-sm btn-outline-secondary">Ver inventario</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Stock</th>
+                  <th>Mínimo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in stock_critico %}
+                  <tr>
+                    <td>{{ p.nombre }}</td>
+                    <td>{{ p.stock_inicial }}</td>
+                    <td>{{ p.stock_minimo }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-muted">Sin productos críticos.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Recordatorios próximos</h6>
+            <a href="{% url 'inventario:recordatorio_list' %}" class="btn btn-sm btn-outline-secondary">Ver recordatorios</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in recordatorios_proximos %}
+                  <tr>
+                    <td>{{ r.titulo }}</td>
+                    <td>{{ r.fecha|date:'d M Y H:i' }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2" class="text-center text-muted">Sin recordatorios.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% elif is_inventario_role %}
+    {% include 'partials/page_header.html' with eyebrow='Inventario' title='Panel de Inventario' subtitle='Ventas, stock y recordatorios' actions_partial='partials/actions/dashboard_actions.html' %}
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Ventas hoy (pagadas)</div>
+            <h4 class="mb-0">{{ ventas_hoy_total }}</h4>
+            <div class="text-muted small">{{ ventas_hoy_count }} ventas</div>
+            <svg class="sparkline mt-3" viewBox="0 0 120 40" aria-hidden="true">
+              <polyline points="0,30 15,24 30,28 45,18 60,22 75,14 90,18 105,8 120,12"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Stock crítico</div>
+            <h4 class="mb-0">{{ stock_critico_count }}</h4>
+            <svg class="sparkline mt-3" viewBox="0 0 120 40" aria-hidden="true">
+              <polyline points="0,12 15,16 30,10 45,20 60,14 75,24 90,18 105,28 120,22"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Recordatorios pendientes</div>
+            <h4 class="mb-0">{{ reminders_pending|default:0 }}</h4>
+            <svg class="sparkline mt-3" viewBox="0 0 120 40" aria-hidden="true">
+              <polyline points="0,20 15,18 30,24 45,16 60,20 75,12 90,18 105,10 120,14"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Recordatorios próximos</h6>
+            <a href="{% url 'inventario:recordatorio_list' %}" class="btn btn-sm btn-outline-secondary">Ver todos</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in recordatorios_proximos %}
+                  <tr>
+                    <td class="fw-semibold">{{ r.titulo }}</td>
+                    <td>{{ r.fecha|date:'d M Y H:i' }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="2" class="text-center text-muted">No hay recordatorios.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Lotes por vencer</h6>
+            <a href="{% url 'inventario:lotes_vencer' %}" class="btn btn-sm btn-outline-secondary">Ver todos</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Lote</th>
+                  <th>Vence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for l in lotes_por_vencer %}
+                  <tr>
+                    <td class="fw-semibold">{{ l.producto.nombre }}</td>
+                    <td>{{ l.lote }}</td>
+                    <td>{{ l.fecha_vencimiento }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-muted">No hay lotes próximos a vencer.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Stock crítico</h6>
+            <a href="{% url 'inventario:list' %}" class="btn btn-sm btn-outline-secondary">Ver inventario</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Stock</th>
+                  <th>Mínimo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in stock_critico %}
+                  <tr>
+                    <td class="fw-semibold">{{ p.nombre }}</td>
+                    <td>{{ p.stock_inicial }}</td>
+                    <td>{{ p.stock_minimo }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-muted">No hay productos críticos.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    {% include 'partials/page_header.html' with eyebrow='Resumen' title='Dashboard' subtitle='Vista rápida de ventas, stock y consultas' actions_partial='partials/actions/dashboard_actions.html' %}
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            {% if perms.inventario.view_venta %}
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="text-muted small">Ventas hoy</div>
+                  <h4 class="mb-0">{{ ventas_hoy_total }}</h4>
+                </div>
+                <span class="badge-soft">{{ ventas_hoy_count }} ventas</span>
+              </div>
+              <svg class="sparkline mt-3" viewBox="0 0 120 40" aria-hidden="true">
+                <polyline points="0,30 15,24 30,28 45,18 60,22 75,14 90,18 105,8 120,12"></polyline>
+              </svg>
+            {% else %}
+              <div class="text-muted small">Ventas hoy</div>
+              <h4 class="mb-0">—</h4>
+              <div class="text-muted small">Sin permiso</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Stock crítico</div>
+            {% if perms.inventario.view_producto %}
+              <h4 class="mb-0">{{ stock_critico_count }}</h4>
+              <svg class="sparkline mt-3" viewBox="0 0 120 40" aria-hidden="true">
+                <polyline points="0,12 15,16 30,10 45,20 60,14 75,24 90,18 105,28 120,22"></polyline>
+              </svg>
+            {% else %}
+              <h4 class="mb-0">—</h4>
+              <div class="text-muted small">Sin permiso</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="text-muted small">Consultas recientes</div>
+            <h4 class="mb-0">{{ consultas_recientes|length }}</h4>
+            <svg class="sparkline mt-3" viewBox="0 0 120 40" aria-hidden="true">
+              <polyline points="0,26 15,20 30,22 45,16 60,18 75,12 90,20 105,10 120,14"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Consultas recientes</h6>
+            <a href="{% url 'clinica:lista_mascotas' %}" class="btn btn-sm btn-outline-secondary">Ver mascotas</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Mascota</th>
+                  <th>Diagnóstico</th>
+                  <th>Fecha</th>
+                  <th>Médico</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in consultas_recientes %}
+                  <tr>
+                    <td class="fw-semibold">{{ c.mascota.nombre }}</td>
+                    <td>{{ c.diagnostico }}</td>
+                    <td>{{ c.fecha|date:'d M Y H:i' }}</td>
+                    <td>{{ c.medico.get_full_name|default:c.medico|default:'—' }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted">No hay consultas recientes.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card mb-4">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Recordatorios próximos</h6>
+            {% if perms.inventario.view_recordatorio %}
+              <a href="{% url 'inventario:recordatorio_list' %}" class="btn btn-sm btn-outline-secondary">Ver todos</a>
+            {% endif %}
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if perms.inventario.view_recordatorio %}
+                  {% for r in recordatorios_proximos %}
+                    <tr>
+                      <td class="fw-semibold">{{ r.titulo }}</td>
+                      <td>{{ r.fecha|date:'d M Y H:i' }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="2" class="text-center text-muted">No hay recordatorios.</td></tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="2" class="text-center text-muted">Sin permiso para ver recordatorios.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header bg-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Stock crítico</h6>
+            {% if perms.inventario.view_producto %}
+              <a href="{% url 'inventario:list' %}" class="btn btn-sm btn-outline-secondary">Ver inventario</a>
+            {% endif %}
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Stock</th>
+                  <th>Mínimo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if perms.inventario.view_producto %}
+                  {% for p in stock_critico %}
+                    <tr>
+                      <td class="fw-semibold">{{ p.nombre }}</td>
+                      <td>{{ p.stock_inicial }}</td>
+                      <td>{{ p.stock_minimo }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="3" class="text-center text-muted">No hay productos críticos.</td></tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="3" class="text-center text-muted">Sin permiso para ver inventario.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock content %}

@@ -1,0 +1,7 @@
+{% for item in main_nav_items %}
+  {% if wrap_li %}
+    <li class="nav-item"><a class="{{ item_class }}" href="{% url item.url %}">{{ item.label }}</a></li>
+  {% else %}
+    <a class="{{ item_class }}" href="{% url item.url %}">{{ item.label }}</a>
+  {% endif %}
+{% endfor %}

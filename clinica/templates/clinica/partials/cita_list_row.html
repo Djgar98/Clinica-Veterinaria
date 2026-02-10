@@ -1,0 +1,95 @@
+<tr>
+  <td class="fw-semibold">{{ c.mascota.nombre }}</td>
+  <td>{{ c.veterinario.nombre_completo|default:c.veterinario|default:'—' }}</td>
+  <td>
+    {% if c.estado == 'ATENDIDA' and c.ultima_consulta_fecha %}
+      <span class="text-nowrap">Atendida el {{ c.ultima_consulta_fecha|date:'d M Y H:i' }}</span>
+    {% else %}
+      <span class="text-nowrap">{{ c.fecha|date:'d M Y H:i' }}</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if c.estado == 'PENDIENTE' %}
+      <span class="badge-soft text-primary">Por confirmar</span>
+    {% elif c.estado == 'CONFIRMADA' %}
+      <span class="chip text-info"><i class="fas fa-check"></i> Confirmada</span>
+    {% elif c.estado == 'REPROGRAMADA' %}
+      <span class="badge-soft text-purple">Reprogramada</span>
+    {% elif c.estado == 'ATENDIDA' %}
+      <span class="chip text-success"><i class="fas fa-check"></i> Atendida</span>
+    {% else %}
+      <span class="badge-soft text-danger">Cancelada</span>
+    {% endif %}
+    {% if c.id in receta_pendiente_ids %}
+      <span class="badge-receta ms-2 text-nowrap">Receta pendiente</span>
+    {% endif %}
+  </td>
+  <td class="text-end">
+    <div class="table-actions">
+      <a href="{% url 'clinica:cita_detail' c.pk %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalle" aria-label="Ver detalle">
+        <i class="fas fa-eye"></i>
+      </a>
+    {% if perms.clinica.change_cita and c.estado != 'ATENDIDA' %}
+      <a href="{% url 'clinica:cita_edit' c.pk %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Editar" aria-label="Editar">
+        <i class="fas fa-pen"></i>
+      </a>
+      {% if c.estado != 'CANCELADA' and c.estado != 'ATENDIDA' %}
+        <form method="post" action="{% url 'clinica:cita_status' c.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="cancelar">
+          <button type="submit" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Cancelar" aria-label="Cancelar">
+            <i class="fas fa-times"></i>
+          </button>
+        </form>
+      {% endif %}
+    {% endif %}
+    {% if c.estado == 'PENDIENTE' %}
+      {% if perms.clinica.change_cita %}
+      <form method="post" action="{% url 'clinica:cita_status' c.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="confirmar">
+        <button type="submit" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Confirmar" aria-label="Confirmar">
+          <i class="fas fa-check"></i>
+        </button>
+      </form>
+      {% elif is_owner_only %}
+        {% if request.user == c.mascota.owner %}
+        <form method="post" action="{% url 'clinica:cita_status' c.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="confirmar">
+          <button type="submit" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Confirmar" aria-label="Confirmar">
+            <i class="fas fa-check"></i>
+          </button>
+        </form>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+    {% if is_owner_only and request.user == c.mascota.owner %}
+      {% if c.estado != 'CANCELADA' and c.estado != 'ATENDIDA' %}
+        <form method="post" action="{% url 'clinica:cita_status' c.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="cancelar">
+          <button type="submit" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Cancelar" aria-label="Cancelar">
+            <i class="fas fa-times"></i>
+          </button>
+        </form>
+          <a href="{% url 'clinica:solicitud_reprogramacion_create' c.pk %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Reprogramar" aria-label="Reprogramar">
+            <i class="fas fa-calendar-alt"></i>
+          </a>
+        {% endif %}
+      {% endif %}
+    {% if c.veterinario and request.user.staff_profile and c.veterinario_id == request.user.staff_profile.id %}
+      {% if c.estado == 'CONFIRMADA' or c.estado == 'REPROGRAMADA' %}
+        <a href="{% url 'clinica:agregar_consulta' c.pk %}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Abrir consulta" aria-label="Abrir consulta">
+          <i class="fas fa-stethoscope"></i>
+        </a>
+      {% endif %}
+      {% if c.estado != 'CANCELADA' and c.estado != 'ATENDIDA' %}
+        <a href="{% url 'clinica:solicitud_reprogramacion_create' c.pk %}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Reprogramar" aria-label="Reprogramar">
+          <i class="fas fa-calendar-alt"></i>
+        </a>
+      {% endif %}
+    {% endif %}
+    </div>
+  </td>
+</tr>

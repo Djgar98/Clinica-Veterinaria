@@ -1,0 +1,169 @@
+﻿{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Recibo Venta #{{ venta.id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <style>
+      body { background: #fff; color: #0f172a; }
+      .receipt {
+        max-width: 80mm;
+        margin: 8px auto;
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 11px;
+      }
+      .receipt-header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
+        margin-bottom: 8px;
+      }
+      .receipt-title { font-size: 1rem; font-weight: 700; }
+      .receipt-meta { font-size: 0.75rem; color: #64748b; }
+      .divider { border-top: 1px dashed #e5e7eb; margin: 8px 0; }
+      .table { font-size: 0.7rem; table-layout: auto; width: 100%; }
+      .table thead th { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+      .table th, .table td { word-break: normal; padding: 0.35rem 0.2rem; }
+      .table th:nth-child(1), .table td:nth-child(1) { width: 42%; }
+      .table th:nth-child(2), .table td:nth-child(2) { width: 9%; text-align: center; }
+      .table th:nth-child(3), .table td:nth-child(3) { width: 21%; }
+      .table th:nth-child(4), .table td:nth-child(4) { width: 12%; }
+      .table th:nth-child(5), .table td:nth-child(5) { width: 16%; }
+      .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+      .price-stack { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; white-space: nowrap; line-height: 1.1; }
+      .price-stack .muted { color: #94a3b8; font-size: 0.6rem; }
+      .totals { display: flex; justify-content: flex-end; }
+      .totals .card { min-width: 140px; }
+      .totals .card-body { padding: 8px 10px; }
+      .totals .row-line { display: flex; justify-content: space-between; gap: 8px; }
+      .totals .row-line span { white-space: nowrap; }
+      .print-actions { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
+
+      @page {
+        size: 80mm auto;
+        margin: 4mm;
+      }
+      @media print {
+        .print-actions { display: none; }
+        body { margin: 0; }
+        .receipt { border: none; margin: 0; padding: 0; max-width: 80mm; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+      <div class="print-actions">
+        <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">Imprimir</button>
+      </div>
+      <div class="receipt-header">
+        <div>
+          <div class="receipt-title">Clínica Veterinaria Argüello</div>
+          <div class="receipt-meta">Recibo de venta</div>
+        </div>
+        <div class="text-end">
+          <div><strong>Venta #{{ venta.id }}</strong></div>
+          <div class="receipt-meta">{{ venta.fecha|date:'Y-m-d H:i' }}</div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="receipt-meta">Cliente</div>
+          <div><strong>
+            {% if venta.id_propietario %}
+              {{ venta.id_propietario.get_full_name|default:venta.id_propietario.username }}
+            {% else %}
+              {{ venta.cliente_nombre|default:'—' }}
+            {% endif %}
+          </strong></div>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <div class="receipt-meta">Vendedor</div>
+          <div><strong>{{ venta.vendedor|default:'—' }}</strong></div>
+        </div>
+        <div class="col-md-6">
+          <div class="receipt-meta">Método de pago</div>
+          <div><strong>{{ venta.get_metodo_pago_display }}</strong></div>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <div class="receipt-meta">Estado</div>
+          <div><strong>{{ venta.get_estado_display }}</strong></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Prod</th>
+              <th>Cant</th>
+              <th>Precio</th>
+              <th class="num">Desc</th>
+              <th class="num">Subt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in line_items %}
+              <tr>
+                <td>{{ row.item.producto.nombre }}</td>
+                <td>{{ row.item.cantidad }}</td>
+                <td>
+                  <div class="price-stack">
+                    <div>{{ row.item.precio_unitario }}</div>
+                    <div class="muted">{{ row.precio_final }}</div>
+                  </div>
+                </td>
+                <td class="num">{{ row.descuento }}</td>
+                <td class="num">{{ row.item.subtotal }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-muted">Sin items.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="totals">
+        <div class="card">
+          <div class="card-body">
+            <div class="row-line">
+              <span>Subtotal real</span>
+              <strong>C$ {{ subtotal_bruto|default:venta.total }}</strong>
+            </div>
+            <div class="row-line">
+              <span>Descuento</span>
+              <strong>C$ {{ descuento_items|default:0 }}</strong>
+            </div>
+            <div class="row-line">
+              <span>Subtotal con descuento</span>
+              <strong>C$ {{ subtotal_neto|default:venta.total }}</strong>
+            </div>
+            <div class="row-line">
+              <span>Impuesto</span>
+              <strong>C$ {{ venta.impuesto }}</strong>
+            </div>
+            <div class="row-line">
+              <span>Total</span>
+              <strong>C$ {{ venta.total }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if venta.notas %}
+        <div class="divider"></div>
+        <div>
+          <div class="receipt-meta">Notas</div>
+          <div>{{ venta.notas }}</div>
+        </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

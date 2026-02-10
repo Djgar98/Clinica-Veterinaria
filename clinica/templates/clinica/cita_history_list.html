@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Historial de citas{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Citas' title='Historial de citas' subtitle='Acciones y cambios' %}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-3">
+        <input type="number" name="cita" class="form-control" placeholder="ID de cita" value="{{ request.GET.cita }}">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'clinica:cita_history_list' %}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Cita</th>
+          <th>Evento</th>
+          <th>Detalle</th>
+          <th>Usuario</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in events %}
+          <tr>
+            <td>
+              #{{ e.cita_id }} — {{ e.cita.mascota.nombre }}
+            </td>
+            <td>{{ e.get_tipo_display }}</td>
+            <td class="text-muted">{{ e.detalle|default:'—' }}</td>
+            <td>{{ e.created_by.get_full_name|default:e.created_by.username|default:'—' }}</td>
+            <td>{{ e.created_at|date:'d M Y H:i' }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">No hay eventos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

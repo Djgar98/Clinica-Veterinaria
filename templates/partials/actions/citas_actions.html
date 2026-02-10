@@ -1,0 +1,14 @@
+﻿{% if perms.clinica.add_cita %}
+  <a href="{% url 'clinica:cita_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-1"></i> Nueva cita
+  </a>
+{% elif perms.clinica.add_solicitudcita %}
+  <a href="{% url 'clinica:solicitud_cita_create' %}" class="btn btn-outline-primary">
+    <i class="fas fa-paper-plane me-1"></i> Solicitar cita
+  </a>
+{% endif %}
+{% if perms.clinica.view_cita %}
+  <a href="{% url 'clinica:cita_calendar' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-calendar-alt me-1"></i> Calendario
+  </a>
+{% endif %}

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recordatorios de citas{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Agenda' title='Recordatorios de citas' subtitle='Pendientes, enviados y fallidos' %}
+
+<div class="d-flex justify-content-end mb-3">
+  <a class="btn btn-outline-secondary" href="javascript:history.back()">Volver</a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-3">
+        <select name="estado" class="form-select">
+          <option value="">Estado</option>
+          {% for value, label in estado_choices %}
+            <option value="{{ value }}" {% if request.GET.estado == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="canal" class="form-select">
+          <option value="">Canal</option>
+          {% for value, label in canal_choices %}
+            <option value="{{ value }}" {% if request.GET.canal == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="mascota" class="form-select">
+          <option value="">Mascota</option>
+          {% for m in mascotas %}
+            <option value="{{ m.id }}" {% if request.GET.mascota == m.id|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'clinica:cita_reminder_list' %}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Cita</th>
+          <th>Mascota</th>
+          <th>Canal</th>
+          <th>Estado</th>
+          <th>Programado</th>
+          <th>Enviado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reminders %}
+          <tr>
+            <td>#{{ r.cita_id }}</td>
+            <td class="fw-semibold">{{ r.cita.mascota.nombre }}</td>
+            <td>{{ r.get_canal_display }}</td>
+            <td>{{ r.get_estado_display }}</td>
+            <td>{{ r.programado_para|date:'d M Y H:i' }}</td>
+            <td>{% if r.enviado_en %}{{ r.enviado_en|date:'d M Y H:i' }}{% else %}-{% endif %}</td>
+            <td class="text-end">
+              {% if r.estado == 'PENDIENTE' and r.canal != 'WHATSAPP' and perms.clinica.change_citareminder %}
+                <form method="post" action="{% url 'clinica:cita_reminder_whatsapp' r.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-success">Pasar a WhatsApp</button>
+                </form>
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted">No hay recordatorios.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}

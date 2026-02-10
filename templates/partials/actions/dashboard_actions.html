@@ -1,0 +1,6 @@
+{% if perms.inventario.add_venta %}
+  <a href="{% url 'inventario:venta_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Nueva venta</a>
+{% endif %}
+{% if perms.clinica.add_mascota %}
+  <a href="{% url 'clinica:crear_mascota' %}" class="btn btn-outline-secondary"><i class="fas fa-paw me-1"></i> Nueva mascota</a>
+{% endif %}

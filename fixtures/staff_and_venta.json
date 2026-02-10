@@ -1,0 +1,37 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 100,
+    "fields": {
+      "username": "staff1",
+      "first_name": "Juan",
+      "last_name": "Perez",
+      "email": "juan.perez@example.com",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "password": ""
+    }
+  },
+  {
+    "model": "usuarios.staff",
+    "pk": 50,
+    "fields": {
+      "user": 100,
+      "nombre_completo": "Dr. Juan Perez",
+      "cargo": "VETERINARIO",
+      "is_active": true
+    }
+  },
+  {
+    "model": "inventario.venta",
+    "pk": 200,
+    "fields": {
+      "fecha": "2026-02-03T10:00:00",
+      "total": "150.00",
+      "id_propietario": 100,
+      "vendedor": 50,
+      "notas": "Venta de ejemplo cargada por fixture"
+    }
+  }
+]

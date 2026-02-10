@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+{% include 'partials/page_header.html' with eyebrow='Inventario' title='Reportes' subtitle='Ventas, utilidad y desempeño' %}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-2">
+      <div class="col-md-3">
+        <input name="from" type="date" value="{{ request.GET.from }}" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <input name="to" type="date" value="{{ request.GET.to }}" class="form-control">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'inventario:reportes' %}">Limpiar</a>
+      </div>
+      <div class="col-md-3 text-end">
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+        <a class="btn btn-outline-secondary" href="?{{ request.GET.urlencode }}&export=csv">Exportar CSV</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="text-muted small">Total de ventas</div>
+        <div class="fs-4 fw-semibold">C$ {{ total_ventas|default:0 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white">Ventas por vendedor</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Vendedor</th>
+              <th class="text-end">Ventas</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in ventas_por_vendedor %}
+              <tr>
+                <td>{{ v.vendedor__nombre_completo|default:"-" }}</td>
+                <td class="text-end">{{ v.count }}</td>
+                <td class="text-end">C$ {{ v.total }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white">Ventas por método</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th class="text-end">Ventas</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in ventas_por_metodo %}
+              <tr>
+                <td>{{ m.metodo_pago }}</td>
+                <td class="text-end">{{ m.count }}</td>
+                <td class="text-end">C$ {{ m.total }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white">Top productos</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th class="text-end">Cantidad</th>
+              <th class="text-end">Ingreso</th>
+              <th class="text-end">Utilidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in top_productos %}
+              <tr>
+                <td>{{ p.producto__nombre }}</td>
+                <td class="text-end">{{ p.qty }}</td>
+                <td class="text-end">C$ {{ p.ingreso }}</td>
+                <td class="text-end">C$ {{ p.utilidad }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white">Menos vendidos</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th class="text-end">Cantidad</th>
+              <th class="text-end">Ingreso</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in bottom_productos %}
+              <tr>
+                <td>{{ p.producto__nombre }}</td>
+                <td class="text-end">{{ p.qty }}</td>
+                <td class="text-end">C$ {{ p.ingreso }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header bg-white">Ventas por categoría</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Categoría</th>
+          <th class="text-end">Cantidad</th>
+          <th class="text-end">Ingreso</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in ventas_por_categoria %}
+          <tr>
+            <td>{{ c.producto__categoria__name|default:"-" }}</td>
+            <td class="text-end">{{ c.qty }}</td>
+            <td class="text-end">C$ {{ c.ingreso }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header bg-white">Ventas por día</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th class="text-end">Ventas</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in ventas_por_dia %}
+          <tr>
+            <td>{{ d.fecha__date }}</td>
+            <td class="text-end">{{ d.count }}</td>
+            <td class="text-end">C$ {{ d.total }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock content %}
