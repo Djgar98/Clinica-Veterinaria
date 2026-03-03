@@ -126,8 +126,8 @@ class AuditLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = 'AuditorÃ­a'
-        verbose_name_plural = 'AuditorÃ­as'
+        verbose_name = 'Auditoría'
+        verbose_name_plural = 'Auditorías'
         ordering = ['-created_at']
 
     def __str__(self):
@@ -159,3 +159,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.user})"
+
+
+

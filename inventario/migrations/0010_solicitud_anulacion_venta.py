@@ -22,9 +22,11 @@ class Migration(migrations.Migration):
                 ('venta', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='anulaciones', to='inventario.venta')),
             ],
             options={
-                'verbose_name': 'Solicitud de AnulaciÃ³n',
-                'verbose_name_plural': 'Solicitudes de AnulaciÃ³n',
+                'verbose_name': 'Solicitud de Anulación',
+                'verbose_name_plural': 'Solicitudes de Anulación',
                 'ordering': ['-created_at'],
             },
         ),
     ]
+
+

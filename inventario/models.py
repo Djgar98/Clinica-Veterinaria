@@ -330,11 +330,11 @@ class VentaConfig(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'ConfiguraciÃ³n de ventas'
-        verbose_name_plural = 'ConfiguraciÃ³n de ventas'
+        verbose_name = 'Configuración de ventas'
+        verbose_name_plural = 'Configuración de ventas'
 
     def __str__(self):
-        return 'ConfiguraciÃ³n de ventas'
+        return 'Configuración de ventas'
 
 
 def get_venta_config():
@@ -402,12 +402,12 @@ class SolicitudAnulacionVenta(models.Model):
     resolved_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = 'Solicitud de AnulaciÃ³n'
-        verbose_name_plural = 'Solicitudes de AnulaciÃ³n'
+        verbose_name = 'Solicitud de Anulación'
+        verbose_name_plural = 'Solicitudes de Anulación'
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Solicitud anulaciÃ³n venta #{self.venta_id} ({self.estado})"
+        return f"Solicitud Anulación venta #{self.venta_id} ({self.estado})"
 
 
 class Recordatorio(models.Model):
@@ -529,3 +529,5 @@ def recalc_venta_total(instance):
     instance.total = total
     instance.impuesto = impuesto
     instance.save(update_fields=['total', 'impuesto'])
+
+

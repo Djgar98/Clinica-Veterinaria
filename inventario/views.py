@@ -1,4 +1,4 @@
-﻿from django.urls import reverse_lazy
+from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
@@ -508,7 +508,7 @@ class VentaConfigUpdateView(LoginRequiredMixin, PermissionRequiredMixin, View):
         form = VentaConfigForm(request.POST, instance=config)
         if form.is_valid():
             form.save()
-            messages.success(request, 'ConfiguraciÃ³n de ventas actualizada.')
+            messages.success(request, 'Configuración de ventas actualizada.')
             return redirect('inventario:venta_config')
         return render(request, self.template_name, {'form': form, 'config': config})
 
@@ -797,7 +797,7 @@ class SolicitudAnulacionCreateView(LoginRequiredMixin, PermissionRequiredMixin, 
     def post(self, request, pk):
         venta = get_object_or_404(Venta, pk=pk)
         if venta.estado == Venta.ESTADO_ANULADA:
-            messages.warning(request, 'La venta ya estÃ¡ anulada.')
+            messages.warning(request, 'La venta ya está anulada.')
             return redirect('inventario:venta_list')
         motivo = (request.POST.get('motivo') or '').strip()
         if not motivo:
@@ -1260,3 +1260,4 @@ class StockAdjustmentRejectView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         ajuste.save(update_fields=['estado', 'aprobado_por', 'resolved_at'])
         messages.info(request, 'Solicitud rechazada.')
         return redirect('inventario:ajuste_list')
+

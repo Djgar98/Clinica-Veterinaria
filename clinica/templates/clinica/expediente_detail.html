@@ -1,22 +1,25 @@
 ﻿{% extends 'base.html' %}
 {% load static %}
+{% load encoding_extras %}
 
-{% block title %}Expediente - {{ mascota.nombre }}{% endblock %}
+{% block title %}Expediente — {{ mascota.nombre|fix_mojibake }}{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
     <div class="eyebrow">Expediente</div>
-    <h2 class="mb-1">{{ mascota.nombre }}</h2>
-    <p class="text-muted mb-0">{{ mascota.especie }} — {{ mascota.raza|default:'Sin raza' }}</p>
+    <h2 class="mb-1">{{ mascota.nombre|fix_mojibake }}</h2>
+    <p class="text-muted mb-0">{{ mascota.especie|fix_mojibake }} — {{ mascota.raza|fix_mojibake|default:'Sín raza' }}</p>
   </div>
   <div class="page-actions">
     <a href="{% url 'clinica:lista_mascotas' %}" class="btn btn-outline-secondary">
       <i class="fas fa-arrow-left me-1"></i> Volver
     </a>
+    {% if not is_owner_only %}
     <a href="{% url 'clinica:editar_mascota' mascota.id %}" class="btn btn-outline-secondary">
       <i class="fas fa-edit me-1"></i> Editar ficha
     </a>
+    {% endif %}
   </div>
 </div>
 
@@ -27,14 +30,14 @@
         <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-4">
           <div class="position-relative">
             {% if mascota.foto %}
-              <img src="{{ mascota.foto.url }}" alt="Foto de {{ mascota.nombre }}" class="rounded-circle" style="width:128px; height:128px; object-fit:cover; border:4px solid #e2e8f0;">
+              <img src="{{ mascota.foto.url }}" alt="Foto de {{ mascota.nombre|fix_mojibake }}" class="rounded-circle" style="width:128px; height:128px; object-fit:cover; border:4px solid #e2e8f0;">
             {% else %}
-              <img src="https://via.placeholder.com/128x128.png?text=Mascota" alt="Foto de {{ mascota.nombre }}" class="rounded-circle" style="width:128px; height:128px; object-fit:cover; border:4px solid #e2e8f0;">
+              <img src="https://via.placeholder.com/128x128.png?text=Mascota" alt="Foto de {{ mascota.nombre|fix_mojibake }}" class="rounded-circle" style="width:128px; height:128px; object-fit:cover; border:4px solid #e2e8f0;">
             {% endif %}
           </div>
           <div class="flex-grow-1">
             <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-              <h4 class="mb-0">{{ mascota.nombre }}</h4>
+              <h4 class="mb-0">{{ mascota.nombre|fix_mojibake }}</h4>
               {% if mascota.esterilizado %}
                 <span class="badge-soft">Esterilizado</span>
               {% endif %}
@@ -42,7 +45,7 @@
                 <span class="chip"><i class="fas fa-microchip me-1"></i> Microchip</span>
               {% endif %}
             </div>
-            <div class="text-muted">{{ mascota.especie }} • {{ mascota.raza|default:'Sin raza' }}</div>
+            <div class="text-muted">{{ mascota.especie|fix_mojibake }} — {{ mascota.raza|fix_mojibake|default:'Sín raza' }}</div>
             <div class="d-flex flex-wrap gap-2 mt-2">
               <span class="chip"><i class="fas fa-heartbeat me-1"></i> {% if edad %}{{ edad }}{% elif mascota.fecha_nacimiento %}Nacido: {{ mascota.fecha_nacimiento }}{% else %}Edad: N/D{% endif %}</span>
               <span class="chip"><i class="fas fa-venus-mars me-1"></i> {{ mascota.get_sexo_display }}</span>
@@ -53,13 +56,13 @@
                 <span class="chip"><i class="fas fa-weight-scale me-1"></i> {{ mascota.peso_kg }} kg</span>
               {% endif %}
               {% if mascota.color %}
-                <span class="chip"><i class="fas fa-palette me-1"></i> {{ mascota.color }}</span>
+                <span class="chip"><i class="fas fa-palette me-1"></i> {{ mascota.color|fix_mojibake }}</span>
               {% endif %}
             </div>
           </div>
           <div class="text-md-end">
             <div class="text-muted small">Dueño</div>
-            <div class="fw-semibold">{% if mascota.owner %}{{ mascota.owner.get_full_name|default:mascota.owner }}{% else %}Sin asignar{% endif %}</div>
+            <div class="fw-semibold">{% if mascota.owner %}{{ mascota.owner.get_full_name|fix_mojibake|default:mascota.owner }}{% else %}Sín asignar{% endif %}</div>
           </div>
         </div>
       </div>
@@ -79,12 +82,12 @@
                   <div class="card-body py-2">
                     <div class="d-flex justify-content-between align-items-start">
                       <div>
-                        <div class="fw-bold">{{ c.diagnostico }}</div>
-                        <div class="text-muted">{{ c.descripcion|default:'' }}</div>
+                        <div class="fw-bold">{{ c.diagnostico|fix_mojibake }}</div>
+                        <div class="text-muted">{{ c.descripcion|fix_mojibake|default:'' }}</div>
                       </div>
                       <div class="text-end text-muted small">
                         <div>{{ c.fecha|date:'d M Y H:i' }}</div>
-                        <div class="mt-1">Dr(a). {{ c.medico.get_full_name|default:c.medico|default:'—' }}</div>
+                        <div class="mt-1">Dr(a). {{ c.medico.get_full_name|default:c.medico|default:'-' }}</div>
                       </div>
                     </div>
                   </div>
@@ -105,22 +108,22 @@
         <h6 class="mb-0"><i class="fas fa-info-circle me-1 text-primary"></i>Ficha técnica</h6>
       </div>
       <div class="card-body small text-muted">
-        <p class="mb-1"><strong>Nombre:</strong> {{ mascota.nombre }}</p>
-        <p class="mb-1"><strong>Especie:</strong> {{ mascota.especie }}</p>
-        <p class="mb-1"><strong>Raza:</strong> {{ mascota.raza|default:'N/D' }}</p>
+        <p class="mb-1"><strong>Nombre:</strong> {{ mascota.nombre|fix_mojibake }}</p>
+        <p class="mb-1"><strong>Especie:</strong> {{ mascota.especie|fix_mojibake }}</p>
+        <p class="mb-1"><strong>Raza:</strong> {{ mascota.raza|fix_mojibake|default:'N/D' }}</p>
         <p class="mb-1"><strong>Sexo:</strong> {{ mascota.get_sexo_display }}</p>
         <p class="mb-1"><strong>Fecha nacimiento:</strong> {{ mascota.fecha_nacimiento|default:'N/D' }}</p>
-        <p class="mb-1"><strong>Color:</strong> {{ mascota.color|default:'N/D' }}</p>
+        <p class="mb-1"><strong>Color:</strong> {{ mascota.color|fix_mojibake|default:'N/D' }}</p>
         <p class="mb-1"><strong>Tamaño:</strong> {{ mascota.get_tamanio_display|default:'N/D' }}</p>
         <p class="mb-1"><strong>Peso:</strong> {% if mascota.peso_kg %}{{ mascota.peso_kg }} kg{% else %}N/D{% endif %}</p>
         <p class="mb-1"><strong>Esterilizado:</strong> {% if mascota.esterilizado %}Sí{% else %}No{% endif %}</p>
         <p class="mb-1"><strong>Microchip:</strong> {{ mascota.microchip|default:'N/D' }}</p>
-        <p class="mb-1"><strong>Dueño:</strong> {% if mascota.owner %}{{ mascota.owner.get_full_name|default:mascota.owner }}{% else %}<span class="text-muted">No asignado</span>{% endif %}</p>
+        <p class="mb-1"><strong>Dueño:</strong> {% if mascota.owner %}{{ mascota.owner.get_full_name|fix_mojibake|default:mascota.owner }}{% else %}<span class="text-muted">No asignado</span>{% endif %}</p>
         <hr>
-        <p class="mb-1"><strong>Alergias:</strong> {{ mascota.alergias|default:'Sin registro' }}</p>
-        <p class="mb-1"><strong>Vacunas:</strong> {{ mascota.vacunas|default:'Sin registro' }}</p>
-        <p class="mb-1"><strong>Señas particulares:</strong> {{ mascota.senas_particulares|default:'Sin registro' }}</p>
-        <p class="mb-0"><strong>Notas clínicas:</strong> {{ mascota.notas|default:'Sin registro' }}</p>
+        <p class="mb-1"><strong>Alergias:</strong> {{ mascota.alergias|fix_mojibake|default:'Sín registro' }}</p>
+        <p class="mb-1"><strong>Vacunas:</strong> {{ mascota.vacunas|fix_mojibake|default:'Sín registro' }}</p>
+        <p class="mb-1"><strong>Señas particulares:</strong> {{ mascota.senas_particulares|fix_mojibake|default:'Sín registro' }}</p>
+        <p class="mb-0"><strong>Notas clínicas:</strong> {{ mascota.notas|fix_mojibake|default:'Sín registro' }}</p>
         <hr>
         <p class="mb-0 text-muted small">Última actualización: {% if expediente %}{{ expediente.creado|date:'d M Y' }}{% else %}N/D{% endif %}</p>
       </div>
@@ -140,3 +143,7 @@
 {% endif %}
 
 {% endblock content %}
+
+
+
+

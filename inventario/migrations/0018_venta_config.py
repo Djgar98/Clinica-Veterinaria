@@ -16,8 +16,10 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'ConfiguraciÃ³n de ventas',
-                'verbose_name_plural': 'ConfiguraciÃ³n de ventas',
+                'verbose_name': 'Configuración de ventas',
+                'verbose_name_plural': 'Configuración de ventas',
             },
         ),
     ]
+
+

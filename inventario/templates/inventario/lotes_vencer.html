@@ -10,7 +10,7 @@
   <div class="card-body">
     <form method="get" class="row g-2">
       <div class="col-md-3">
-        <label class="form-label">D?as</label>
+        <label class="form-label">Días</label>
         <input type="number" name="dias" class="form-control" min="1" value="{{ dias }}">
       </div>
       <div class="col-md-2 align-self-end">
@@ -40,7 +40,7 @@
             <td>{{ l.cantidad }}</td>
           </tr>
         {% empty %}
-          <tr><td colspan="4" class="text-center text-muted">No hay lotes pr?ximos a vencer.</td></tr>
+          <tr><td colspan="4" class="text-center text-muted">No hay lotes próximos a vencer.</td></tr>
         {% endfor %}
       </tbody>
     </table>

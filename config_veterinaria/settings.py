@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -10,7 +10,12 @@ SECRET_KEY = 'replace-me-with-a-secure-key-for-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    ".trycloudflare.com",
+]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -73,7 +78,7 @@ DATABASES = {
     }
 }
 
-# Si más adelante prefieres MySQL, restaura la configuración MySQL y completa la contraseña.
+# Si mÃ¡s adelante prefieres MySQL, restaura la configuraciÃ³n MySQL y completa la contraseÃ±a.
 
 # Maintenance mode (returns 503 page when enabled)
 MAINTENANCE_MODE = False
@@ -144,4 +149,10 @@ INVENTARIO_ALERT_RECIPIENTS = []
 INVENTARIO_STOCK_ALERT_ENABLED = True
 INVENTARIO_VENCIMIENTO_ALERT_ENABLED = True
 INVENTARIO_VENCIMIENTO_DIAS = 30
+
+
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.trycloudflare.com',
+]
 

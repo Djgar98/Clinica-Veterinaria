@@ -29,3 +29,5 @@ python manage.py runserver
 ```
 
 5) Panel admin: http://127.0.0.1:8000/admin/
+
+Guia de pruebas por roles: docs/guia_pruebas_roles.md

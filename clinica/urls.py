@@ -11,7 +11,6 @@ from .views import (
     SolicitudReprogramacionUpdateView,
     RecetaApproveView, RecetaRejectView, RecetaPrintView,
     ReportesView,
-    ReservaLoteCreateView, ReservaLoteCancelView, ReservaLoteUseView,
     CitaReminderGenerateView, CitaReminderListView, CitaReminderSwitchChannelView,
 )
 
@@ -20,9 +19,6 @@ app_name = 'clinica'
 urlpatterns = [
     path('', DashboardView.as_view(), name='dashboard'),
     path('expediente/<int:pk>/', ExpedienteDetailView.as_view(), name='expediente_detail'),
-    path('expediente/<int:pk>/reservar-lote/', ReservaLoteCreateView.as_view(), name='reserva_lote_create'),
-    path('reserva-lote/<int:pk>/cancelar/', ReservaLoteCancelView.as_view(), name='reserva_lote_cancel'),
-    path('reserva-lote/<int:pk>/usar/', ReservaLoteUseView.as_view(), name='reserva_lote_use'),
     path('citas/', CitaListView.as_view(), name='cita_list'),
     path('citas/historial/', CitaHistoryListView.as_view(), name='cita_history_list'),
     path('citas/calendario/', CitaCalendarView.as_view(), name='cita_calendar'),
@@ -50,3 +46,7 @@ urlpatterns = [
     path('mascotas/', MascotaListView.as_view(), name='lista_mascotas'),
     path('reportes/', ReportesView.as_view(), name='reportes'),
 ]
+
+
+
+

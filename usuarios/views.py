@@ -138,3 +138,8 @@ def notifications_mark_read(request):
         return JsonResponse({'ok': False}, status=401)
     Notification.objects.filter(user=request.user, read_at__isnull=True).update(read_at=timezone.now())
     return JsonResponse({'ok': True})
+
+
+
+
+
